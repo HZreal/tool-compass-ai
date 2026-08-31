@@ -1,28 +1,32 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { Miniflare } from "miniflare";
+import { renderToStaticMarkup } from "react-dom/server";
+
+import { HomeView } from "../../app/page";
+import { listPublishedTools } from "../../app/lib/catalog";
+import { seedCatalog } from "../../db/seed";
 
 async function renderHome() {
-  const workerUrl = new URL("../../dist/server/index.js", import.meta.url);
-  workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
-  const { default: worker } = await import(workerUrl.href);
-
-  return worker.fetch(
-    new Request("http://localhost/", { headers: { accept: "text/html" } }),
-    {
-      ASSETS: {
-        fetch: async () => new Response("Not found", { status: 404 }),
-      },
-    },
-    { waitUntil() {}, passThroughOnException() {} },
-  );
+  const miniflare = new Miniflare({
+    modules: true,
+    script: "export default { fetch() { return new Response('ok'); } };",
+    d1Databases: ["DB"],
+  });
+  const db = await miniflare.getD1Database("DB");
+  const migration = await readFile(new URL("../../drizzle/0000_catalog.sql", import.meta.url), "utf8");
+  for (const statement of migration.split("--> statement-breakpoint")) {
+    if (statement.trim()) await db.prepare(statement).run();
+  }
+  await seedCatalog(db);
+  const featuredTools = await listPublishedTools(db, { featured: true });
+  return { html: renderToStaticMarkup(<HomeView featuredTools={featuredTools} />), miniflare };
 }
 
-test("renders the AI Scenery heading inside the main landmark", async () => {
-  const response = await renderHome();
-  assert.equal(response.status, 200);
-
-  const html = await response.text();
+test("renders the AI Scenery heading inside the main landmark", async (t) => {
+  const { html, miniflare } = await renderHome();
+  t.after(() => miniflare.dispose());
   assert.match(html, /<main[\s>][\s\S]*?<h1[^>]*>AI Scenery<\/h1>[\s\S]*?<\/main>/i);
 });
 
