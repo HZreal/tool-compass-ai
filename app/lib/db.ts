@@ -1,4 +1,4 @@
-import type { ToolStatus } from "../../db/schema";
+import type { ToolStatus } from "../../drizzle/schema";
 
 type D1Result<T> = { results: T[] };
 
@@ -77,4 +77,4 @@ export async function listPublishedTools(
   }));
 }
 
-export type { ToolStatus } from "../../db/schema";
+export type { ToolStatus } from "../../drizzle/schema";

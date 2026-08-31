@@ -14,7 +14,7 @@ async function createCatalogDatabase() {
   });
   const db = await miniflare.getD1Database("DB");
   const migration = await readFile(
-    new URL("../../db/migrations/0000_catalog/migration.sql", import.meta.url),
+    new URL("../../drizzle/0000_catalog.sql", import.meta.url),
     "utf8",
   );
 
@@ -58,4 +58,12 @@ test("seeding twice keeps the catalog unique and searchable", async (t) => {
   const results = await listPublishedTools(db, { query: "GitHub" });
   assert.ok(results.some((tool) => tool.slug === "github"));
   assert.ok(results.every((tool) => tool.status === "published"));
+
+  const plan = await db
+    .prepare("EXPLAIN QUERY PLAN SELECT rowid FROM tools_fts WHERE tools_fts MATCH 'GitHub'")
+    .all<{ detail: string }>();
+  assert.ok(
+    plan.results.some((row) => /VIRTUAL TABLE INDEX/i.test(row.detail)),
+    `expected FTS virtual-table access, received: ${JSON.stringify(plan.results)}`,
+  );
 });
