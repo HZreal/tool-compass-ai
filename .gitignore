@@ -1,5 +1,6 @@
 # Agent planning and local visual-prototype state
 .superpowers/
+.worktrees/
 
 # Dependencies and build output
 node_modules/
