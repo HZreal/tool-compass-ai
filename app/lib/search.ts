@@ -1,0 +1,84 @@
+import type { CatalogTool, D1Database } from "./catalog";
+
+export const SEARCH_PAGE_SIZE = 18;
+
+export type SearchSceneSuggestion = { slug: string; name: string; description: string };
+export type SearchResult = {
+  tools: CatalogTool[];
+  total: number;
+  page: number;
+  totalPages: number;
+  suggestedScenes: SearchSceneSuggestion[];
+};
+
+type SearchRow = {
+  kind: "tool" | "scene";
+  total: number;
+  slug: string;
+  name: string;
+  description: string;
+  websiteUrl: string | null;
+  status: "published" | null;
+  featured: number | null;
+  categories: string | null;
+  scenes: string | null;
+};
+
+export async function searchPublishedTools(db: D1Database, query: string, page = 1): Promise<SearchResult> {
+  const currentPage = Math.max(1, Math.min(100, Math.floor(page) || 1));
+  const offset = (currentPage - 1) * SEARCH_PAGE_SIZE;
+  const ftsQuery = `"${query.trim().replaceAll('"', '""')}"`;
+  const result = await db.prepare(`
+    WITH matched AS (
+      SELECT t.id, COUNT(*) OVER() AS total
+      FROM tools_fts
+      JOIN tools t ON t.id = tools_fts.rowid
+      WHERE tools_fts MATCH ? AND t.status = 'published'
+    ), paginated AS (
+      SELECT id, total FROM matched
+      ORDER BY id ASC
+      LIMIT ? OFFSET ?
+    ), tool_rows AS (
+      SELECT 'tool' AS kind, p.total, t.slug, t.name, t.description,
+        t.website_url AS websiteUrl, t.status, t.featured,
+        GROUP_CONCAT(DISTINCT c.slug) AS categories,
+        GROUP_CONCAT(DISTINCT s.slug) AS scenes
+      FROM paginated p
+      JOIN tools t ON t.id = p.id
+      LEFT JOIN tool_categories tc ON tc.tool_id = t.id
+      LEFT JOIN categories c ON c.id = tc.category_id
+      LEFT JOIN tool_scenes ts ON ts.tool_id = t.id
+      LEFT JOIN scenes s ON s.id = ts.scene_id
+      GROUP BY p.id
+    )
+    SELECT kind, total, slug, name, description, websiteUrl, status, featured, categories, scenes FROM tool_rows
+    UNION ALL
+    SELECT 'scene' AS kind, 0 AS total, slug, name, description, NULL, NULL, NULL, NULL, NULL
+    FROM scenes
+    WHERE NOT EXISTS (SELECT 1 FROM matched)
+    ORDER BY kind ASC, name COLLATE NOCASE ASC
+  `).bind(ftsQuery, SEARCH_PAGE_SIZE, offset).all<SearchRow>();
+
+  const toolRows = result.results.filter((row) => row.kind === "tool");
+  const suggestions = result.results
+    .filter((row) => row.kind === "scene")
+    .map(({ slug, name, description }) => ({ slug, name, description }));
+  const total = toolRows[0]?.total ?? 0;
+
+  return {
+    tools: toolRows.map((row) => ({
+      slug: row.slug,
+      name: row.name,
+      description: row.description,
+      websiteUrl: row.websiteUrl!,
+      status: "published",
+      featured: Boolean(row.featured),
+      categories: row.categories?.split(",") ?? [],
+      scenes: row.scenes?.split(",") ?? [],
+    })),
+    total,
+    page: currentPage,
+    totalPages: Math.ceil(total / SEARCH_PAGE_SIZE),
+    suggestedScenes: suggestions,
+  };
+}
