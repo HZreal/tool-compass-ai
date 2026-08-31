@@ -6,6 +6,8 @@ import { Miniflare } from "miniflare";
 import { createSearchResponse, createToolsResponse } from "../../app/lib/public-api";
 import { searchPublishedTools } from "../../app/lib/search";
 
+const displayValues = ["Free tier", '["coding"]', "2026-08-31", "Test catalog metadata.", '["web"]', '["English"]'] as const;
+
 async function createDatabase() {
   const miniflare = new Miniflare({ modules: true, script: "export default { fetch() { return new Response('ok'); } };", d1Databases: ["DB"] });
   const db = await miniflare.getD1Database("DB");
@@ -13,8 +15,8 @@ async function createDatabase() {
   for (const statement of migration.split("--> statement-breakpoint")) if (statement.trim()) await db.prepare(statement).run();
   await db.batch([
     db.prepare("INSERT INTO scenes (id, slug, name, description) VALUES (1, 'coding', 'Coding', 'Build software'), (2, 'writing', 'Writing', 'Write better')"),
-    ...Array.from({ length: 20 }, (_, index) => db.prepare("INSERT INTO tools (id, slug, name, description, website_url, status) VALUES (?, ?, ?, ?, ?, ?)").bind(index + 1, `code-helper-${index + 1}`, index === 0 ? "代码助手" : `Code Helper ${index + 1}`, "A code helper for teams.", `https://example.com/${index + 1}`, "published")),
-    db.prepare("INSERT INTO tools (id, slug, name, description, website_url, status) VALUES (21, 'archived-code-helper', 'Code Helper Archived', 'Archived code helper.', 'https://example.com/archived', 'archived')"),
+    ...Array.from({ length: 20 }, (_, index) => db.prepare("INSERT INTO tools (id, slug, name, description, website_url, pricing, tags, verified_at, editorial_note, platforms, languages, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(index + 1, `code-helper-${index + 1}`, index === 0 ? "代码助手" : `Code Helper ${index + 1}`, "A code helper for teams.", `https://example.com/${index + 1}`, ...displayValues, "published")),
+    db.prepare("INSERT INTO tools (id, slug, name, description, website_url, pricing, tags, verified_at, editorial_note, platforms, languages, status) VALUES (21, 'archived-code-helper', 'Code Helper Archived', 'Archived code helper.', 'https://example.com/archived', 'Free tier', '[\"coding\"]', '2026-08-29', 'Archived test catalog metadata.', '[\"web\"]', '[\"English\"]', 'archived')"),
   ]);
   return { db, miniflare };
 }

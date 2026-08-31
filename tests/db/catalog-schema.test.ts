@@ -3,7 +3,8 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { Miniflare } from "miniflare";
 
-import { listPublishedTools } from "../../app/lib/db";
+import { getPublishedTool, listPublishedTools } from "../../app/lib/db";
+import { searchPublishedTools } from "../../app/lib/search";
 import { seedCatalog } from "../../db/seed";
 
 async function createCatalogDatabase() {
@@ -67,6 +68,41 @@ test("seeding twice keeps the catalog unique and searchable", async (t) => {
     `expected FTS virtual-table access, received: ${JSON.stringify(plan.results)}`,
   );
 });
+
+test("seeded published tools expose their display metadata through catalog and FTS search", async (t) => {
+  const { db, miniflare } = await createCatalogDatabase();
+  t.after(() => miniflare.dispose());
+
+  await seedCatalog(db);
+
+  const expectedDisplayMetadata = {
+    pricing: "Free tier; Plus and Pro subscriptions",
+    tags: ["chat", "writing", "multimodal"],
+    verifiedAt: "2026-08-31",
+    editorialNote: "A reliable general-purpose assistant for drafting, brainstorming, and everyday problem-solving.",
+    platforms: ["web", "macOS", "Windows", "iOS", "Android"],
+    languages: ["Chinese", "English", "Japanese"],
+  };
+
+  const detail = await getPublishedTool(db, "chatgpt");
+  const listed = await listPublishedTools(db, { query: "ChatGPT" });
+  const searched = await searchPublishedTools(db, "ChatGPT");
+
+  assert.deepEqual(pickDisplayMetadata(detail), expectedDisplayMetadata);
+  assert.deepEqual(pickDisplayMetadata(listed.find((tool) => tool.slug === "chatgpt")), expectedDisplayMetadata);
+  assert.deepEqual(pickDisplayMetadata(searched.tools.find((tool) => tool.slug === "chatgpt")), expectedDisplayMetadata);
+});
+
+function pickDisplayMetadata(tool: Awaited<ReturnType<typeof getPublishedTool>> | undefined) {
+  return tool && {
+    pricing: tool.pricing,
+    tags: tool.tags,
+    verifiedAt: tool.verifiedAt,
+    editorialNote: tool.editorialNote,
+    platforms: tool.platforms,
+    languages: tool.languages,
+  };
+}
 
 test("D1 notes example resolves its independent notes schema", async () => {
   const route = await readFile(

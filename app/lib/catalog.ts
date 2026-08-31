@@ -16,6 +16,12 @@ export type CatalogTool = {
   name: string;
   description: string;
   websiteUrl: string;
+  pricing: string;
+  tags: string[];
+  verifiedAt: string;
+  editorialNote: string;
+  platforms: string[];
+  languages: string[];
   status: ToolStatus;
   featured: boolean;
   categories: string[];
@@ -29,14 +35,19 @@ export type CatalogFilters = {
   featured?: boolean;
 };
 
-type CatalogRow = Omit<CatalogTool, "categories" | "scenes" | "featured"> & {
+type CatalogRow = Omit<CatalogTool, "categories" | "scenes" | "tags" | "platforms" | "languages" | "featured"> & {
   featured: number;
   categories: string | null;
   scenes: string | null;
+  tags: string;
+  platforms: string;
+  languages: string;
 };
 
 const toolFields = `
   t.slug, t.name, t.description, t.website_url AS websiteUrl, t.status, t.featured,
+  t.pricing, t.tags, t.verified_at AS verifiedAt, t.editorial_note AS editorialNote,
+  t.platforms, t.languages,
   GROUP_CONCAT(DISTINCT c.slug) AS categories,
   GROUP_CONCAT(DISTINCT s.slug) AS scenes
 `;
@@ -45,9 +56,17 @@ function toCatalogTool(row: CatalogRow): CatalogTool {
   return {
     ...row,
     featured: Boolean(row.featured),
+    tags: parseStringArray(row.tags),
+    platforms: parseStringArray(row.platforms),
+    languages: parseStringArray(row.languages),
     categories: row.categories?.split(",") ?? [],
     scenes: row.scenes?.split(",") ?? [],
   };
+}
+
+function parseStringArray(value: string): string[] {
+  const parsed: unknown = JSON.parse(value);
+  return Array.isArray(parsed) && parsed.every((item) => typeof item === "string") ? parsed : [];
 }
 
 export async function listPublishedTools(
