@@ -1,0 +1,15 @@
+# Agent planning and local visual-prototype state
+.superpowers/
+
+# Dependencies and build output
+node_modules/
+dist/
+.vinext/
+
+# Local configuration and test output
+.env
+.env.*
+!.env.example
+coverage/
+playwright-report/
+test-results/
