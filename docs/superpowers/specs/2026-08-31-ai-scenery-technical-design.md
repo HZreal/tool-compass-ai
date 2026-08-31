@@ -59,14 +59,14 @@ app/
 │   ├── validation.ts                # Zod 输入 schema
 │   └── admin-auth.ts                # ChatGPT 身份与 allowlist 校验
 └── chatgpt-auth.ts                  # Sites starter 的登录 helper
-db/
+drizzle/
 ├── schema.ts                        # Drizzle 表与类型定义
-└── migrations/                      # 生成的、版本化 D1 SQL migrations
+└── 0000_catalog.sql                 # Sites 构建会打包的、版本化 D1 SQL migration
 tests/                               # 单元、路由和浏览器测试
 .openai/hosting.json                 # project_id 与 D1 逻辑绑定
 ```
 
-每个模块只处理一个职责：页面渲染不拼 SQL，API 只协调校验和领域查询，`lib` 层处理数据/身份细节。`app/chatgpt-auth.ts` 使用 Sites starter 提供的 helper，不自行实现 `/signin-with-chatgpt`、回调或登出路由。
+每个模块只处理一个职责：页面渲染不拼 SQL，API 只协调校验和领域查询，`lib` 层处理数据/身份细节。`app/chatgpt-auth.ts` 使用 Sites starter 提供的 helper，不自行实现 `/signin-with-chatgpt`、回调或登出路由。D1 migration 必须保存在仓库根目录 `drizzle/`，确保 Sites 构建产物携带 `dist/.openai/drizzle/`。
 
 ## 5. 路由与 API
 

@@ -32,7 +32,7 @@
 | `app/lib/search.ts` | FTS5 query construction and ranking. |
 | `app/lib/validation.ts` | Shared Zod schemas. |
 | `app/lib/admin-auth.ts` | Server-side ChatGPT identity and allowlist verification. |
-| `db/schema.ts`, `db/migrations/*` | Drizzle schema and generated D1 migrations. |
+| `drizzle/schema.ts`, `drizzle/*.sql` | Drizzle schema and D1 migrations packaged by Sites. |
 | `tests/*` | Unit, route and browser coverage. |
 
 ### Task 1: Initialize the Sites application shell
@@ -55,7 +55,7 @@
 ### Task 2: Create and seed the D1 catalog
 
 **Files:**
-- Create: `db/schema.ts`, `db/migrations/0000_catalog/migration.sql`, `db/seed.ts`
+- Create: `drizzle/schema.ts`, `drizzle/0000_catalog.sql`, `db/seed.ts`
 - Create: `app/lib/db.ts`, `tests/db/catalog-schema.test.ts`
 
 **Interfaces:**
@@ -63,8 +63,8 @@
 - Consumes: Worker environment binding `DB: D1Database`.
 
 - [ ] Write failing tests that seed twice and assert eight unique categories, six scenes, 80 unique tool slugs and no duplicate relationship rows.
-- [ ] Define D1 tables, unique indexes, relation tables, FTS5 trigram virtual table and sync triggers in the generated migration.
-- [ ] Generate and inspect the Drizzle migration; configure the matching nested migration pattern.
+- [ ] Define D1 tables, unique indexes, relation tables, FTS5 trigram virtual table and sync triggers in the Sites-packaged migration.
+- [ ] Generate and inspect the Drizzle migration; use SQL-expression timestamps so schema and migration defaults match.
 - [ ] Implement an idempotent seed with globally valuable, mature, verified tools and their categories/scenes.
 - [ ] Run schema and seed tests against local D1, inspect FTS query plans, then commit `feat: add catalog schema and seed data`.
 
