@@ -1,4 +1,5 @@
 import type { ToolStatus } from "../../drizzle/schema";
+import { toFtsPhrase } from "./search";
 
 export type D1Result<T> = { results: T[] };
 
@@ -66,7 +67,7 @@ export async function listPublishedTools(
   }
   if (filters.query?.trim()) {
     clauses.push("t.id IN (SELECT rowid FROM tools_fts WHERE tools_fts MATCH ?)");
-    values.push(filters.query.trim());
+    values.push(toFtsPhrase(filters.query));
   }
   if (filters.featured) clauses.push("t.featured = 1");
 

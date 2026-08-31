@@ -12,7 +12,7 @@ export type SearchResult = {
 };
 
 type SearchRow = {
-  kind: "tool" | "scene";
+  kind: "meta" | "tool" | "scene";
   total: number;
   slug: string;
   name: string;
@@ -24,10 +24,18 @@ type SearchRow = {
   scenes: string | null;
 };
 
+export function isValidSearchQuery(query: string): boolean {
+  return query.length >= 2 && query.length <= 80;
+}
+
+export function toFtsPhrase(query: string): string {
+  return `"${query.trim().replaceAll('"', '""')}"`;
+}
+
 export async function searchPublishedTools(db: D1Database, query: string, page = 1): Promise<SearchResult> {
   const currentPage = Math.max(1, Math.min(100, Math.floor(page) || 1));
   const offset = (currentPage - 1) * SEARCH_PAGE_SIZE;
-  const ftsQuery = `"${query.trim().replaceAll('"', '""')}"`;
+  const ftsQuery = toFtsPhrase(query);
   const result = await db.prepare(`
     WITH matched AS (
       SELECT t.id, COUNT(*) OVER() AS total
@@ -53,6 +61,9 @@ export async function searchPublishedTools(db: D1Database, query: string, page =
     )
     SELECT kind, total, slug, name, description, websiteUrl, status, featured, categories, scenes FROM tool_rows
     UNION ALL
+    SELECT 'meta' AS kind, total, '', '', '', NULL, NULL, NULL, NULL, NULL
+    FROM (SELECT COUNT(*) AS total FROM matched)
+    UNION ALL
     SELECT 'scene' AS kind, 0 AS total, slug, name, description, NULL, NULL, NULL, NULL, NULL
     FROM scenes
     WHERE NOT EXISTS (SELECT 1 FROM matched)
@@ -63,7 +74,7 @@ export async function searchPublishedTools(db: D1Database, query: string, page =
   const suggestions = result.results
     .filter((row) => row.kind === "scene")
     .map(({ slug, name, description }) => ({ slug, name, description }));
-  const total = toolRows[0]?.total ?? 0;
+  const total = result.results.find((row) => row.kind === "meta")?.total ?? 0;
 
   return {
     tools: toolRows.map((row) => ({
