@@ -67,3 +67,17 @@ test("seeding twice keeps the catalog unique and searchable", async (t) => {
     `expected FTS virtual-table access, received: ${JSON.stringify(plan.results)}`,
   );
 });
+
+test("D1 notes example resolves its independent notes schema", async () => {
+  const route = await readFile(
+    new URL("../../examples/d1/app/api/notes/route.ts", import.meta.url),
+    "utf8",
+  );
+  const schema = await readFile(
+    new URL("../../examples/d1/db/schema.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(route, /from\s+["']\.\.\/\.\.\/\.\.\/db\/schema["']/);
+  assert.match(schema, /export const notes\s*=\s*sqliteTable\("notes"/);
+});
