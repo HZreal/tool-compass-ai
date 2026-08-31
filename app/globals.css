@@ -21,6 +21,7 @@ body {
 }
 
 .site-shell {
+  box-sizing: border-box;
   display: grid;
   min-height: 100svh;
   place-items: center;
@@ -28,7 +29,9 @@ body {
 }
 
 .hero {
-  width: min(100%, 720px);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 720px;
   padding: clamp(32px, 9vw, 80px);
   border: 1px solid color-mix(in srgb, var(--accent) 24%, transparent);
   border-radius: 24px;

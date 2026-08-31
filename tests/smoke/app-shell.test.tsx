@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 async function renderHome() {
@@ -23,4 +24,14 @@ test("renders the AI Scenery heading inside the main landmark", async () => {
 
   const html = await response.text();
   assert.match(html, /<main[\s>][\s\S]*?<h1[^>]*>AI Scenery<\/h1>[\s\S]*?<\/main>/i);
+});
+
+test("keeps the narrow shell within the viewport without relying on a global reset", async () => {
+  const css = await readFile(new URL("../../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(
+    css,
+    /\.site-shell\s*\{[\s\S]*?box-sizing:\s*border-box;/,
+  );
+  assert.match(css, /\.hero\s*\{[\s\S]*?box-sizing:\s*border-box;/);
 });
