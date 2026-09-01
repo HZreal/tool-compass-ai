@@ -10,6 +10,8 @@
 
 **Spec:** `docs/superpowers/specs/2026-08-31-ai-scenery-mvp-design.md`；`docs/superpowers/specs/2026-08-31-ai-scenery-technical-design.md`
 
+**Status record:** `docs/project-status.md` is the current product and delivery summary. Update it and the checkboxes below together.
+
 ## Global Constraints
 
 - 使用原始产品定义的 8 个中文分类和 6 个中文任务场景；slug 可保持稳定英文标识。
@@ -27,10 +29,10 @@
 - Create: `drizzle/0005_catalog_contract.sql`
 - Test: `tests/db/catalog-schema.test.ts`, `tests/lib/catalog.test.ts`
 
-- [ ] 写失败测试：种子严格包含 8 个指定中文分类、6 个指定中文场景，工具含别名、地区、Logo、精选排序。
-- [ ] 生成迁移，为 `tools` 添加 `aliases`、`logo_url`、`region`、`featured_rank`，新增 `tags`/`tool_tags` 关系表；增加公开目录索引与 FTS 同步字段。
-- [ ] 将 80 条工具重映射到产品规定分类与场景，填充上述字段并保持幂等。
-- [ ] 运行 D1 测试、迁移检查和查询计划检查；提交数据契约变更。
+- [x] 写失败测试：种子严格包含 8 个指定中文分类、6 个指定中文场景，工具含别名、地区、Logo、精选排序。
+- [ ] 生成迁移，为 `tools` 添加 `aliases`、`logo_url`、`region`、`featured_rank`，新增 `tags`/`tool_tags` 关系表；增加公开目录索引与 FTS 同步字段。`tools` 字段、索引与 FTS 已完成；关系化标签待 Task 3。
+- [x] 将 80 条工具重映射到产品规定分类与场景，填充上述字段并保持幂等。待通过本地 seed 命令同步预览数据库。
+- [x] 运行 D1 测试、迁移检查和查询计划检查；提交数据契约变更。常见目录筛选的查询计划断言仍待 Task 2 补齐。
 
 ### Task 2: D1 目录、搜索与分页
 
@@ -38,9 +40,9 @@
 - Modify: `app/lib/catalog.ts`, `app/lib/search.ts`, `app/lib/public-api.ts`, `app/discover/page.tsx`, `app/components/filter-panel.tsx`, `app/components/tool-grid.tsx`
 - Test: `tests/lib/catalog.test.ts`, `tests/api/search.test.ts`, `tests/routes/discovery.test.tsx`
 
-- [ ] 写失败测试：别名 FTS 命中、地区/平台/定价交集筛选、精选排序、18 条分页和错误页码边界。
-- [ ] 以参数绑定的 D1 SQL 实现条件筛选、总数和分页，不再在页面内存中解析定价或平台。
-- [ ] 让目录 URL 同步 `region`、`platform`、`pricing` 和 `page`，展示总数、当前页与翻页控件。
+- [ ] 写失败测试：别名 FTS 命中、地区/平台/定价交集筛选、精选排序、18 条分页和错误页码边界。地区/平台/定价交集与分页已覆盖；别名、排序与边界待补。
+- [x] 以参数绑定的 D1 SQL 实现条件筛选、总数和分页，不再在页面内存中解析定价或平台。定价暂由 D1 中的既有文本字段过滤，待替换为结构化字段。
+- [x] 让目录 URL 同步 `region`、`platform`、`pricing` 和 `page`，展示总数、当前页与翻页控件。
 - [ ] 用 `EXPLAIN QUERY PLAN` 断言常见筛选使用索引；运行相关单元、路由和浏览器测试并提交。
 
 ### Task 3: 单管理员运营闭环
