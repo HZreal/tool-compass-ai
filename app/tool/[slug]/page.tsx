@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-html-link-for-pages -- VINext exposes Next aliases only during its build, while route tests render this server component directly. */
+/* eslint-disable react/jsx-no-target-blank -- The same-origin /go/:slug tracker needs the Referer; noopener still prevents opener access. */
 import { SiteHeader } from "../../components/site-header";
 import { ToolGrid } from "../../components/tool-grid";
 import { getPublishedTool, listPublishedTools, type CatalogTool } from "../../lib/catalog";
@@ -18,7 +19,7 @@ export function ToolDetailView({ tool, relatedTools }: { tool: CatalogTool; rela
               <h1>{tool.name}</h1>
               <p>{tool.description}</p>
             </div>
-            <a className="button button--red" href={`/go/${tool.slug}`} target="_blank" rel="noreferrer">访问官网 <span aria-hidden="true">↗</span></a>
+            <a className="button button--red" href={`/go/${tool.slug}`} target="_blank" rel="noopener">访问官网 <span aria-hidden="true">↗</span></a>
           </header>
 
           <div className="tool-detail__layout">

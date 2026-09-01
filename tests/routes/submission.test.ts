@@ -114,3 +114,23 @@ test("redirects through an anonymous outbound event that stores only the tool an
   const columns = await db.prepare("PRAGMA table_info(outbound_events)").all<{ name: string }>();
   assert.deepEqual(columns.results.map((column) => column.name), ["id", "tool_id", "source_path", "created_at"]);
 });
+
+test("outbound redirect never persists query parameters or cross-origin referrer details", async (t) => {
+  const { db, miniflare } = await createDatabase();
+  t.after(() => miniflare.dispose());
+
+  for (const referer of [
+    "https://ai-scenery.test/tool/chatgpt?email=reader%40example.com&ip=203.0.113.9",
+    "https://tracking.example/scene/chat?ip=203.0.113.9",
+  ]) {
+    const response = await createOutboundRedirectResponse(
+      db,
+      new Request("https://ai-scenery.test/go/chatgpt", { headers: { referer } }),
+      "chatgpt",
+    );
+    assert.equal(response.status, 302);
+  }
+
+  const events = await db.prepare("SELECT source_path AS sourcePath FROM outbound_events ORDER BY id").all<{ sourcePath: string }>();
+  assert.deepEqual(events.results, [{ sourcePath: "/tool/chatgpt" }, { sourcePath: "/" }]);
+});
