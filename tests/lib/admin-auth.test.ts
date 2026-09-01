@@ -5,6 +5,7 @@ import {
   AdminAuthError,
   authorizeAdminRequest,
 } from "../../app/lib/admin-auth";
+import { LOCAL_ADMIN_COOKIE, LOCAL_DEV_ADMIN_USER_ID } from "../../app/lib/local-auth";
 
 const ADMIN_USER_ID = "user-admin-001";
 
@@ -53,5 +54,31 @@ test("an empty admin allowlist never grants access", () => {
         "",
       ),
     (error) => error instanceof AdminAuthError && error.status === 503,
+  );
+});
+
+test("localhost requests can use the local development admin cookie", () => {
+  const request = new Request("http://localhost:3000/api/admin/tools", {
+    headers: {
+      cookie: `${LOCAL_ADMIN_COOKIE}=${LOCAL_DEV_ADMIN_USER_ID}`,
+    },
+  });
+
+  assert.deepEqual(authorizeAdminRequest(request, undefined), {
+    userId: LOCAL_DEV_ADMIN_USER_ID,
+    email: "local-admin@localhost",
+  });
+});
+
+test("the local development admin cookie is ignored outside localhost", () => {
+  const request = new Request("https://ai-scenery.test/api/admin/tools", {
+    headers: {
+      cookie: `${LOCAL_ADMIN_COOKIE}=${LOCAL_DEV_ADMIN_USER_ID}`,
+    },
+  });
+
+  assert.throws(
+    () => authorizeAdminRequest(request, undefined),
+    (error) => error instanceof AdminAuthError && error.status === 401,
   );
 });

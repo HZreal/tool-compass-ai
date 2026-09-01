@@ -1,5 +1,10 @@
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+import {
+  LOCAL_DEV_ADMIN_EMAIL,
+  LOCAL_DEV_ADMIN_USER_ID,
+  localDevelopmentUserIdFromCookie,
+} from "./lib/local-auth";
 
 export type ChatGPTUser = {
   userId: string;
@@ -22,7 +27,19 @@ export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
   const requestHeaders = await headers();
   const userId = requestHeaders.get(USER_ID_HEADER);
   const email = requestHeaders.get(USER_EMAIL_HEADER);
-  if (!userId || !email) return null;
+  if (!userId || !email) {
+    const localUserId = localDevelopmentUserIdFromCookie(
+      (await cookies()).toString(),
+      requestHeaders.get("host")?.split(":")[0] ?? "",
+    );
+    if (!localUserId) return null;
+    return {
+      userId: LOCAL_DEV_ADMIN_USER_ID,
+      displayName: "Local Admin",
+      email: LOCAL_DEV_ADMIN_EMAIL,
+      fullName: "Local Admin",
+    };
+  }
 
   const encodedFullName = requestHeaders.get(USER_FULL_NAME_HEADER);
   const fullName =
