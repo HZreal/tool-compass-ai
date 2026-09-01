@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { Miniflare } from "miniflare";
 
-import { getCatalogScene, getPublishedTool, listCatalogCategories, listCatalogScenes, listPublishedTools } from "../../app/lib/catalog";
+import { getCatalogScene, getPublishedTool, listCatalogCategories, listCatalogScenes, listPublishedToolPage, listPublishedTools } from "../../app/lib/catalog";
 
 async function createDatabase() {
   const miniflare = new Miniflare({
@@ -35,6 +35,23 @@ test("catalog only exposes published tools and intersects category and scene fil
   const tools = await listPublishedTools(db, { category: "code", scene: "coding" });
   assert.deepEqual(tools.map((tool) => tool.slug), ["published-code"]);
   assert.ok(tools.every((tool) => tool.status === "published"));
+});
+
+test("catalog pagination applies region, platform and pricing filters inside the D1 query", async (t) => {
+  const { db, miniflare } = await createDatabase();
+  t.after(() => miniflare.dispose());
+
+  const page = await listPublishedToolPage(db, {
+    region: "overseas",
+    platform: "web",
+    pricing: "free",
+    page: 1,
+  });
+
+  assert.deepEqual(page.tools.map((tool) => tool.slug), ["published-code"]);
+  assert.equal(page.total, 1);
+  assert.equal(page.page, 1);
+  assert.equal(page.totalPages, 1);
 });
 
 test("published detail returns null for missing and archived slugs", async (t) => {

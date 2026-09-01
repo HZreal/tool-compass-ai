@@ -6,7 +6,9 @@ export type DiscoveryFilters = {
   scene?: string;
   platform?: string;
   pricing?: string;
+  region?: "domestic" | "overseas";
   featured?: boolean;
+  page?: number;
 };
 
 export class DiscoveryRouteNotFound extends Error {

@@ -19,6 +19,14 @@ export function FilterPanel({ filters, categories, scenes }: FilterPanelProps) {
       </div>
       <input type="hidden" name="q" value={filters.query ?? ""} />
       <label>
+        服务地区
+        <select name="region" defaultValue={filters.region ?? ""}>
+          <option value="">国内与海外</option>
+          <option value="domestic">国内</option>
+          <option value="overseas">海外</option>
+        </select>
+      </label>
+      <label>
         分类
         <select name="category" defaultValue={filters.category ?? ""}>
           <option value="">全部分类</option>

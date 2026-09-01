@@ -41,6 +41,19 @@ export type CatalogFilters = {
   scene?: string;
   query?: string;
   featured?: boolean;
+  region?: ToolRegion;
+  platform?: "web" | "desktop" | "mobile" | "api";
+  pricing?: "free" | "paid";
+  page?: number;
+};
+
+export const CATALOG_PAGE_SIZE = 18;
+
+export type CatalogPage = {
+  tools: CatalogTool[];
+  total: number;
+  page: number;
+  totalPages: number;
 };
 
 export type CatalogCategory = {
@@ -150,6 +163,59 @@ export async function listPublishedTools(
   `).bind(...values).all<CatalogRow>();
 
   return result.results.map(toCatalogTool);
+}
+
+export async function listPublishedToolPage(
+  db: D1Database,
+  filters: CatalogFilters = {},
+): Promise<CatalogPage> {
+  const { clauses, values } = buildPublishedToolFilters(filters);
+  const page = Math.max(1, Math.min(100, Math.floor(filters.page ?? 1) || 1));
+  const offset = (page - 1) * CATALOG_PAGE_SIZE;
+  const [countResult, toolResult] = await Promise.all([
+    db.prepare(`SELECT COUNT(*) AS total FROM tools t WHERE ${clauses.join(" AND ")}`)
+      .bind(...values).first<{ total: number }>(),
+    db.prepare(`
+      SELECT ${toolFields}
+      FROM tools t
+      LEFT JOIN tool_categories tc ON tc.tool_id = t.id
+      LEFT JOIN categories c ON c.id = tc.category_id
+      LEFT JOIN tool_scenes ts ON ts.tool_id = t.id
+      LEFT JOIN scenes s ON s.id = ts.scene_id
+      WHERE ${clauses.join(" AND ")}
+      GROUP BY t.id
+      ORDER BY t.featured DESC, t.featured_rank ASC NULLS LAST, t.name COLLATE NOCASE ASC
+      LIMIT ? OFFSET ?
+    `).bind(...values, CATALOG_PAGE_SIZE, offset).all<CatalogRow>(),
+  ]);
+  const total = countResult?.total ?? 0;
+  return { tools: toolResult.results.map(toCatalogTool), total, page, totalPages: Math.ceil(total / CATALOG_PAGE_SIZE) };
+}
+
+function buildPublishedToolFilters(filters: CatalogFilters) {
+  const clauses = ["t.status = 'published'"];
+  const values: unknown[] = [];
+  if (filters.category) {
+    clauses.push("EXISTS (SELECT 1 FROM tool_categories tc_filter JOIN categories c_filter ON c_filter.id = tc_filter.category_id WHERE tc_filter.tool_id = t.id AND c_filter.slug = ?)");
+    values.push(filters.category);
+  }
+  if (filters.scene) {
+    clauses.push("EXISTS (SELECT 1 FROM tool_scenes ts_filter JOIN scenes s_filter ON s_filter.id = ts_filter.scene_id WHERE ts_filter.tool_id = t.id AND s_filter.slug = ?)");
+    values.push(filters.scene);
+  }
+  if (filters.query?.trim()) {
+    clauses.push("t.id IN (SELECT rowid FROM tools_fts WHERE tools_fts MATCH ?)");
+    values.push(toFtsPhrase(filters.query));
+  }
+  if (filters.featured) clauses.push("t.featured = 1");
+  if (filters.region) { clauses.push("t.region = ?"); values.push(filters.region); }
+  if (filters.platform === "web") clauses.push("EXISTS (SELECT 1 FROM json_each(t.platforms) WHERE lower(value) = 'web')");
+  if (filters.platform === "api") clauses.push("EXISTS (SELECT 1 FROM json_each(t.platforms) WHERE lower(value) = 'api')");
+  if (filters.platform === "desktop") clauses.push("EXISTS (SELECT 1 FROM json_each(t.platforms) WHERE lower(value) IN ('macos', 'windows', 'linux'))");
+  if (filters.platform === "mobile") clauses.push("EXISTS (SELECT 1 FROM json_each(t.platforms) WHERE lower(value) IN ('ios', 'android'))");
+  if (filters.pricing === "free") clauses.push("(lower(t.pricing) LIKE '%free%' OR lower(t.pricing) LIKE '%open-source%')");
+  if (filters.pricing === "paid") clauses.push("NOT (lower(t.pricing) LIKE '%free%' OR lower(t.pricing) LIKE '%open-source%')");
+  return { clauses, values };
 }
 
 export async function getPublishedTool(db: D1Database, slug: string): Promise<CatalogTool | null> {
