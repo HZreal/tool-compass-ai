@@ -14,7 +14,7 @@ async function createCatalogDatabase() {
     d1Databases: ["DB"],
   });
   const db = await miniflare.getD1Database("DB");
-  const migrations = await Promise.all(["0000_catalog.sql", "0001_catalog_metadata_order.sql"].map((file) => readFile(
+  const migrations = await Promise.all(["0000_catalog.sql", "0001_catalog_metadata_order.sql", "0002_submissions_outbound.sql", "0003_admin_audit_events.sql", "0004_submission_review_audit_trigger.sql", "0005_catalog_contract.sql"].map((file) => readFile(
     new URL(`../../drizzle/${file}`, import.meta.url),
     "utf8",
   )));
@@ -93,6 +93,27 @@ test("seeded published tools expose their display metadata through catalog and F
   assert.deepEqual(pickDisplayMetadata(detail), expectedDisplayMetadata);
   assert.deepEqual(pickDisplayMetadata(listed.find((tool) => tool.slug === "chatgpt")), expectedDisplayMetadata);
   assert.deepEqual(pickDisplayMetadata(searched.tools.find((tool) => tool.slug === "chatgpt")), expectedDisplayMetadata);
+});
+
+test("seed catalog uses the product taxonomy and exposes editorial discovery fields", async (t) => {
+  const { db, miniflare } = await createCatalogDatabase();
+  t.after(() => miniflare.dispose());
+  await seedCatalog(db);
+
+  assert.deepEqual(
+    (await db.prepare("SELECT name FROM categories ORDER BY sort_order").all<{ name: string }>()).results.map((row) => row.name),
+    ["聊天与问答", "写作与翻译", "图像与设计", "视频与音频", "办公与效率", "编程与开发", "智能体与自动化", "学习与研究"],
+  );
+  assert.deepEqual(
+    (await db.prepare("SELECT name FROM scenes ORDER BY sort_order").all<{ name: string }>()).results.map((row) => row.name),
+    ["写文章", "做 PPT", "生成图片", "制作视频", "提升办公效率", "辅助编程"],
+  );
+
+  const chatgpt = await getPublishedTool(db, "chatgpt");
+  assert.deepEqual(chatgpt?.aliases, ["OpenAI ChatGPT", "GPT"]);
+  assert.equal(chatgpt?.region, "overseas");
+  assert.ok(chatgpt?.logoUrl?.startsWith("https://"));
+  assert.equal(chatgpt?.featuredRank, 1);
 });
 
 function pickDisplayMetadata(tool: Awaited<ReturnType<typeof getPublishedTool>> | undefined) {

@@ -17,28 +17,32 @@ type SeedTool = {
   editorialNote: string;
   platforms: string[];
   languages: string[];
+  aliases: string[];
+  logoUrl: string;
+  region: "domestic" | "overseas";
+  featuredRank: number | null;
 };
 
 type SeedDisplayMetadata = Omit<SeedTool, "slug" | "name" | "description" | "websiteUrl" | "category" | "scene">;
 
 const categories = [
-  ["ai-assistants", "AI assistants", "General-purpose AI assistants and language models.", 1],
-  ["code-development", "Code development", "Tools for writing, reviewing and shipping software.", 2],
-  ["image-generation", "Image generation", "Image creation, editing and visual generation.", 3],
-  ["video-audio", "Video and audio", "Video editing, synthesis and audio production.", 4],
-  ["productivity", "Productivity", "Writing, planning and personal productivity.", 5],
-  ["data-research", "Data and research", "Research, analysis and data exploration.", 6],
-  ["automation-agents", "Automation and agents", "Workflow automation and autonomous agents.", 7],
-  ["design-collaboration", "Design and collaboration", "Design systems and collaborative workspaces.", 8],
+  ["chat-assistant", "聊天与问答", "用于问答、总结和通用对话的 AI 工具。", 1],
+  ["writing-translation", "写作与翻译", "用于写作、润色、改写和翻译的 AI 工具。", 2],
+  ["image-design", "图像与设计", "用于生成图片、设计和视觉表达的 AI 工具。", 3],
+  ["video-audio", "视频与音频", "用于生成、编辑视频、音频和配音的 AI 工具。", 4],
+  ["office-productivity", "办公与效率", "用于协作、规划和个人效率提升的 AI 工具。", 5],
+  ["code-development", "编程与开发", "用于编写、测试、发布和维护软件的 AI 工具。", 6],
+  ["automation-agents", "智能体与自动化", "用于自动化工作流和构建智能体的 AI 工具。", 7],
+  ["learning-research", "学习与研究", "用于学习、检索、分析和理解资料的 AI 工具。", 8],
 ] as const;
 
 const scenes = [
-  ["chat", "Chat and writing", "Draft, summarize and converse.", 1],
-  ["coding", "Software delivery", "Build, test and maintain applications.", 2],
-  ["visual", "Visual creation", "Create images, designs and presentations.", 3],
-  ["media", "Media production", "Produce video, audio and voice.", 4],
-  ["research", "Research and analysis", "Find evidence and analyze information.", 5],
-  ["workflow", "Workflow automation", "Connect tools and automate repeatable work.", 6],
+  ["writing", "写文章", "起草、改写、润色和整理文字内容。", 1],
+  ["presentation", "做 PPT", "整理资料并完成演示文稿的视觉表达。", 2],
+  ["image", "生成图片", "生成、编辑和设计图片素材。", 3],
+  ["video", "制作视频", "制作视频、配音、字幕和音频内容。", 4],
+  ["office", "提升办公效率", "安排任务、协作和自动化重复工作。", 5],
+  ["coding", "辅助编程", "编写、审查、测试和发布代码。", 6],
 ] as const;
 
 const toolRows: readonly [string, string, string, string, string, string][] = [
@@ -207,10 +211,51 @@ const displayMetadata: Record<string, SeedDisplayMetadata> = {
   retool: { pricing: "Free tier; Team, Business and Enterprise plans", tags: ["internal-tools", "low-code", "apps"], verifiedAt: "2026-08-30", editorialNote: "A fast way for technical teams to build internal tools on top of existing data sources.", platforms: ["web", "self-hosted"], languages: ["English"] },
 };
 
+const categorySlugMap: Record<string, string> = {
+  "ai-assistants": "chat-assistant",
+  "code-development": "code-development",
+  "image-generation": "image-design",
+  "video-audio": "video-audio",
+  productivity: "office-productivity",
+  "data-research": "learning-research",
+  "automation-agents": "automation-agents",
+  "design-collaboration": "image-design",
+};
+
+const sceneSlugMap: Record<string, string> = {
+  chat: "writing",
+  coding: "coding",
+  visual: "image",
+  media: "video",
+  research: "presentation",
+  workflow: "office",
+};
+
+const aliasesBySlug: Record<string, string[]> = {
+  chatgpt: ["OpenAI ChatGPT", "GPT"],
+  claude: ["Claude AI"],
+  gemini: ["Google Gemini", "Bard"],
+  "github-copilot": ["Copilot"],
+};
+
+const domesticSlugs = new Set(["deepseek", "kimi", "doubao", "tongyi", "jimeng"]);
+
 const tools: SeedTool[] = toolRows.map(([slug, name, description, websiteUrl, category, scene]) => {
   const metadata = displayMetadata[slug];
   if (!metadata) throw new Error(`Missing display metadata for seeded tool: ${slug}`);
-  return { slug, name, description, websiteUrl, category, scene, ...metadata };
+  return {
+    slug,
+    name,
+    description,
+    websiteUrl,
+    category: slug === "grammarly" ? "writing-translation" : categorySlugMap[category]!,
+    scene: sceneSlugMap[scene]!,
+    aliases: aliasesBySlug[slug] ?? [],
+    logoUrl: `https://logo.clearbit.com/${new URL(websiteUrl).hostname}`,
+    region: domesticSlugs.has(slug) ? "domestic" : "overseas",
+    featuredRank: slug === "chatgpt" ? 1 : null,
+    ...metadata,
+  };
 });
 
 export async function seedCatalog(db: D1Database): Promise<void> {
@@ -222,7 +267,7 @@ export async function seedCatalog(db: D1Database): Promise<void> {
     statements.push(db.prepare("INSERT INTO scenes (slug, name, description, sort_order) VALUES (?, ?, ?, ?) ON CONFLICT(slug) DO UPDATE SET name = excluded.name, description = excluded.description, sort_order = excluded.sort_order").bind(slug, name, description, sortOrder));
   }
   for (const tool of tools) {
-    statements.push(db.prepare("INSERT INTO tools (slug, name, description, website_url, pricing, tags, verified_at, editorial_note, platforms, languages, status, featured) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'published', ?) ON CONFLICT(slug) DO UPDATE SET name = excluded.name, description = excluded.description, website_url = excluded.website_url, pricing = excluded.pricing, tags = excluded.tags, verified_at = excluded.verified_at, editorial_note = excluded.editorial_note, platforms = excluded.platforms, languages = excluded.languages, status = excluded.status, featured = excluded.featured, updated_at = CURRENT_TIMESTAMP").bind(tool.slug, tool.name, tool.description, tool.websiteUrl, tool.pricing, JSON.stringify(tool.tags), tool.verifiedAt, tool.editorialNote, JSON.stringify(tool.platforms), JSON.stringify(tool.languages), tool.slug === "chatgpt" ? 1 : 0));
+    statements.push(db.prepare("INSERT INTO tools (slug, name, aliases, description, website_url, logo_url, region, pricing, tags, verified_at, editorial_note, platforms, languages, status, featured, featured_rank) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'published', ?, ?) ON CONFLICT(slug) DO UPDATE SET name = excluded.name, aliases = excluded.aliases, description = excluded.description, website_url = excluded.website_url, logo_url = excluded.logo_url, region = excluded.region, pricing = excluded.pricing, tags = excluded.tags, verified_at = excluded.verified_at, editorial_note = excluded.editorial_note, platforms = excluded.platforms, languages = excluded.languages, status = excluded.status, featured = excluded.featured, featured_rank = excluded.featured_rank, updated_at = CURRENT_TIMESTAMP").bind(tool.slug, tool.name, JSON.stringify(tool.aliases), tool.description, tool.websiteUrl, tool.logoUrl, tool.region, tool.pricing, JSON.stringify(tool.tags), tool.verifiedAt, tool.editorialNote, JSON.stringify(tool.platforms), JSON.stringify(tool.languages), tool.featuredRank === null ? 0 : 1, tool.featuredRank));
     statements.push(db.prepare("INSERT OR IGNORE INTO tool_categories (tool_id, category_id) SELECT tools.id, categories.id FROM tools, categories WHERE tools.slug = ? AND categories.slug = ?").bind(tool.slug, tool.category));
     statements.push(db.prepare("INSERT OR IGNORE INTO tool_scenes (tool_id, scene_id) SELECT tools.id, scenes.id FROM tools, scenes WHERE tools.slug = ? AND scenes.slug = ?").bind(tool.slug, tool.scene));
   }

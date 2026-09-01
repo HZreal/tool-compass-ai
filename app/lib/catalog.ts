@@ -1,4 +1,4 @@
-import type { ToolStatus } from "../../drizzle/schema";
+import type { ToolRegion, ToolStatus } from "../../drizzle/schema";
 import { toFtsPhrase } from "./search";
 
 export type D1Result<T> = { results: T[] };
@@ -18,8 +18,11 @@ export type D1Database = {
 export type CatalogTool = {
   slug: string;
   name: string;
+  aliases: string[];
   description: string;
   websiteUrl: string;
+  logoUrl: string | null;
+  region: ToolRegion;
   pricing: string;
   tags: string[];
   verifiedAt: string;
@@ -28,6 +31,7 @@ export type CatalogTool = {
   languages: string[];
   status: ToolStatus;
   featured: boolean;
+  featuredRank: number | null;
   categories: string[];
   scenes: string[];
 };
@@ -48,8 +52,9 @@ export type CatalogCategory = {
 
 export type CatalogScene = CatalogCategory;
 
-type CatalogRow = Omit<CatalogTool, "categories" | "scenes" | "tags" | "platforms" | "languages" | "featured"> & {
+type CatalogRow = Omit<CatalogTool, "categories" | "scenes" | "aliases" | "tags" | "platforms" | "languages" | "featured"> & {
   featured: number;
+  aliases: string;
   categories: string | null;
   scenes: string | null;
   tags: string;
@@ -58,7 +63,8 @@ type CatalogRow = Omit<CatalogTool, "categories" | "scenes" | "tags" | "platform
 };
 
 const toolFields = `
-  t.slug, t.name, t.description, t.website_url AS websiteUrl, t.status, t.featured,
+  t.slug, t.name, t.aliases, t.description, t.website_url AS websiteUrl, t.logo_url AS logoUrl,
+  t.region, t.status, t.featured, t.featured_rank AS featuredRank,
   t.pricing, t.tags, t.verified_at AS verifiedAt, t.editorial_note AS editorialNote,
   t.platforms, t.languages,
   GROUP_CONCAT(DISTINCT c.slug) AS categories,
@@ -69,6 +75,7 @@ function toCatalogTool(row: CatalogRow): CatalogTool {
   return {
     ...row,
     featured: Boolean(row.featured),
+    aliases: parseStringArray(row.aliases),
     tags: parseStringArray(row.tags),
     platforms: parseStringArray(row.platforms),
     languages: parseStringArray(row.languages),
@@ -139,7 +146,7 @@ export async function listPublishedTools(
     LEFT JOIN scenes s ON s.id = ts.scene_id
     WHERE ${clauses.join(" AND ")}
     GROUP BY t.id
-    ORDER BY t.featured DESC, t.name COLLATE NOCASE ASC
+    ORDER BY t.featured DESC, t.featured_rank ASC NULLS LAST, t.name COLLATE NOCASE ASC
   `).bind(...values).all<CatalogRow>();
 
   return result.results.map(toCatalogTool);

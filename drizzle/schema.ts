@@ -4,6 +4,9 @@ import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "driz
 export const toolStatuses = ["draft", "published", "archived"] as const;
 export type ToolStatus = (typeof toolStatuses)[number];
 
+export const toolRegions = ["domestic", "overseas"] as const;
+export type ToolRegion = (typeof toolRegions)[number];
+
 export const submissionTypes = ["recommendation", "correction"] as const;
 export type SubmissionType = (typeof submissionTypes)[number];
 
@@ -30,8 +33,11 @@ export const tools = sqliteTable("tools", {
   id: integer("id").primaryKey(),
   slug: text("slug").notNull(),
   name: text("name").notNull(),
+  aliases: text("aliases").notNull().default("[]"),
   description: text("description").notNull(),
   websiteUrl: text("website_url").notNull(),
+  logoUrl: text("logo_url"),
+  region: text("region", { enum: toolRegions }).notNull().default("overseas"),
   pricing: text("pricing").notNull(),
   tags: text("tags").notNull(),
   verifiedAt: text("verified_at").notNull(),
@@ -40,11 +46,13 @@ export const tools = sqliteTable("tools", {
   languages: text("languages").notNull(),
   status: text("status", { enum: toolStatuses }).notNull().default("draft"),
   featured: integer("featured", { mode: "boolean" }).notNull().default(false),
+  featuredRank: integer("featured_rank"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [
   uniqueIndex("tools_slug_unique").on(table.slug),
-  index("tools_status_featured_idx").on(table.status, table.featured),
+  index("tools_status_featured_rank_idx").on(table.status, table.featured, table.featuredRank),
+  index("tools_status_region_idx").on(table.status, table.region),
 ]);
 
 export const toolCategories = sqliteTable("tool_categories", {

@@ -28,6 +28,7 @@ async function createDatabase() {
       "0002_submissions_outbound.sql",
       "0003_admin_audit_events.sql",
       "0004_submission_review_audit_trigger.sql",
+      "0005_catalog_contract.sql",
     ].map((file) =>
       readFile(new URL(`../../drizzle/${file}`, import.meta.url), "utf8"),
     ),
