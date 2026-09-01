@@ -76,3 +76,17 @@ export const outboundEvents = sqliteTable("outbound_events", {
   sourcePath: text("source_path").notNull(),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [index("outbound_events_tool_created_at_idx").on(table.toolId, table.createdAt)]);
+
+export const adminAuditEvents = sqliteTable("admin_audit_events", {
+  id: integer("id").primaryKey(),
+  action: text("action").notNull(),
+  resourceType: text("resource_type").notNull(),
+  resourceId: integer("resource_id").notNull(),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  index("admin_audit_events_resource_created_at_idx").on(
+    table.resourceType,
+    table.resourceId,
+    table.createdAt,
+  ),
+]);
