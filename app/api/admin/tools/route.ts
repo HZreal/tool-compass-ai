@@ -56,6 +56,9 @@ export async function createAdminToolsResponse(
 }
 
 async function createDraft(db: D1Database, tool: AdminToolInput): Promise<Response> {
+  const taxonomyError = await validateTaxonomy(db, tool);
+  if (taxonomyError) return jsonError(taxonomyError, 422);
+
   const existing = await db
     .prepare("SELECT id FROM tools WHERE slug = ?")
     .bind(tool.slug)
@@ -89,6 +92,9 @@ async function editTool(
   id: number,
   tool: AdminToolInput,
 ): Promise<Response> {
+  const taxonomyError = await validateTaxonomy(db, tool);
+  if (taxonomyError) return jsonError(taxonomyError, 422);
+
   const current = await db
     .prepare("SELECT id FROM tools WHERE id = ?")
     .bind(id)
@@ -234,6 +240,34 @@ function relationStatements(
       SELECT ${toolSelector}, id FROM scenes WHERE slug = ?
     `).bind(toolSelectorValue, slug)),
   );
+}
+
+async function validateTaxonomy(
+  db: D1Database,
+  tool: AdminToolInput,
+): Promise<string | null> {
+  if (!await allSlugsExist(db, "categories", tool.categorySlugs)) {
+    return "所选分类不存在，请刷新后重试";
+  }
+  if (!await allSlugsExist(db, "scenes", tool.sceneSlugs)) {
+    return "所选场景不存在，请刷新后重试";
+  }
+  return null;
+}
+
+async function allSlugsExist(
+  db: D1Database,
+  table: "categories" | "scenes",
+  slugs: string[],
+): Promise<boolean> {
+  const uniqueSlugs = [...new Set(slugs)];
+  if (uniqueSlugs.length === 0) return true;
+  const placeholders = uniqueSlugs.map(() => "?").join(", ");
+  const rows = await db
+    .prepare(`SELECT slug FROM ${table} WHERE slug IN (${placeholders})`)
+    .bind(...uniqueSlugs)
+    .all<{ slug: string }>();
+  return new Set(rows.results.map((row) => row.slug)).size === uniqueSlugs.length;
 }
 
 function auditStatement(

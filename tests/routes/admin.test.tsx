@@ -27,6 +27,7 @@ async function createDatabase() {
       "0001_catalog_metadata_order.sql",
       "0002_submissions_outbound.sql",
       "0003_admin_audit_events.sql",
+      "0004_submission_review_audit_trigger.sql",
     ].map((file) =>
       readFile(new URL(`../../drizzle/${file}`, import.meta.url), "utf8"),
     ),
@@ -173,6 +174,26 @@ test("a tool stays private as a draft, becomes public when published, and disapp
   ]);
 });
 
+test("admin tools reject taxonomy slugs that do not exist instead of silently dropping them", async (t) => {
+  const { db, miniflare } = await createDatabase();
+  t.after(() => miniflare.dispose());
+
+  const response = await createAdminToolsResponse(
+    db,
+    adminRequest("/api/admin/tools", "POST", {
+      ...completeTool,
+      categorySlugs: ["no-such-category"],
+    }),
+    ADMIN_USER_ID,
+  );
+
+  assert.equal(response.status, 422);
+  assert.equal(
+    (await db.prepare("SELECT COUNT(*) AS count FROM tools").first<{ count: number }>())?.count,
+    0,
+  );
+});
+
 test("publishing rejects a legacy draft whose required editorial fields are incomplete", async (t) => {
   const { db, miniflare } = await createDatabase();
   t.after(() => miniflare.dispose());
@@ -254,6 +275,22 @@ test("submission review supports approval and rejection and records both decisio
     { action: "submission.approve", resourceId: 1 },
     { action: "submission.reject", resourceId: 2 },
   ]);
+});
+
+test("only the pending-to-reviewed transition writes a submission audit event", async (t) => {
+  const { db, miniflare } = await createDatabase();
+  t.after(() => miniflare.dispose());
+  await db.prepare(
+    "INSERT INTO submissions (id, type, tool_name, website_url, message) VALUES (3, 'recommendation', 'Tool C', 'https://c.example/', 'Please review C')",
+  ).run();
+
+  await db.prepare("UPDATE submissions SET status = 'approved' WHERE id = 3 AND status = 'pending'").run();
+  await db.prepare("UPDATE submissions SET status = 'rejected' WHERE id = 3 AND status = 'pending'").run();
+
+  const audits = await db
+    .prepare("SELECT action, resource_id AS resourceId FROM admin_audit_events WHERE resource_id = 3")
+    .all<{ action: string; resourceId: number }>();
+  assert.deepEqual(audits.results, [{ action: "submission.approve", resourceId: 3 }]);
 });
 
 test("admin views expose editorial tools and review actions without user management", () => {

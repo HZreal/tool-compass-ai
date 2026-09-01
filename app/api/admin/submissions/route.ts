@@ -43,20 +43,12 @@ export async function createAdminSubmissionsResponse(
   if (!current) return jsonError("投稿不存在", 404);
   if (current.status !== "pending") return jsonError("该投稿已经处理", 409);
 
-  const action = parsed.data.decision === "approved"
-    ? "submission.approve"
-    : "submission.reject";
-  await db.batch([
-    db.prepare(`
-      UPDATE submissions
-      SET status = ?, review_note = ?, reviewed_at = CURRENT_TIMESTAMP
-      WHERE id = ? AND status = 'pending'
-    `).bind(parsed.data.decision, parsed.data.reviewNote, parsed.data.id),
-    db.prepare(`
-      INSERT INTO admin_audit_events (action, resource_type, resource_id)
-      VALUES (?, 'submission', ?)
-    `).bind(action, parsed.data.id),
-  ]);
+  const updated = await db.prepare(`
+    UPDATE submissions
+    SET status = ?, review_note = ?, reviewed_at = CURRENT_TIMESTAMP
+    WHERE id = ? AND status = 'pending'
+  `).bind(parsed.data.decision, parsed.data.reviewNote, parsed.data.id).run();
+  if (updated.meta.changes === 0) return jsonError("该投稿已经处理", 409);
 
   return Response.json(
     { submission: { id: parsed.data.id, status: parsed.data.decision } },

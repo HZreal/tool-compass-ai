@@ -15,7 +15,7 @@ test("homepage search reaches a verified tool detail without horizontal overflow
 
   await expect(page).toHaveURL(/\/tool\/chatgpt$/);
   await expect(page.getByRole("heading", { level: 1, name: "ChatGPT" })).toBeVisible();
-  await expect(page.getByText("A versatile default for writing, analysis, coding, and multimodal tasks.")).toBeVisible();
+  await expect(page.getByText("A reliable general-purpose assistant for drafting, brainstorming, and everyday problem-solving.")).toBeVisible();
   await expect(page.getByText("2026-08-31 核验")).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
