@@ -11,8 +11,10 @@ const displayValues = ["Free tier", '["coding"]', "2026-08-31", "Test catalog me
 async function createDatabase() {
   const miniflare = new Miniflare({ modules: true, script: "export default { fetch() { return new Response('ok'); } };", d1Databases: ["DB"] });
   const db = await miniflare.getD1Database("DB");
-  const migration = await readFile(new URL("../../drizzle/0000_catalog.sql", import.meta.url), "utf8");
-  for (const statement of migration.split("--> statement-breakpoint")) if (statement.trim()) await db.prepare(statement).run();
+  const migrations = await Promise.all(["0000_catalog.sql", "0001_catalog_metadata_order.sql"].map((file) => readFile(new URL(`../../drizzle/${file}`, import.meta.url), "utf8")));
+  for (const migration of migrations) {
+    for (const statement of migration.split("--> statement-breakpoint")) if (statement.trim()) await db.prepare(statement).run();
+  }
   await db.batch([
     db.prepare("INSERT INTO scenes (id, slug, name, description) VALUES (1, 'coding', 'Coding', 'Build software'), (2, 'writing', 'Writing', 'Write better')"),
     ...Array.from({ length: 20 }, (_, index) => db.prepare("INSERT INTO tools (id, slug, name, description, website_url, pricing, tags, verified_at, editorial_note, platforms, languages, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(index + 1, `code-helper-${index + 1}`, index === 0 ? "代码助手" : `Code Helper ${index + 1}`, "A code helper for teams.", `https://example.com/${index + 1}`, ...displayValues, "published")),

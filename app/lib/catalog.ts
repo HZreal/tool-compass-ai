@@ -35,6 +35,15 @@ export type CatalogFilters = {
   featured?: boolean;
 };
 
+export type CatalogCategory = {
+  slug: string;
+  name: string;
+  description: string;
+  sortOrder: number;
+};
+
+export type CatalogScene = CatalogCategory;
+
 type CatalogRow = Omit<CatalogTool, "categories" | "scenes" | "tags" | "platforms" | "languages" | "featured"> & {
   featured: number;
   categories: string | null;
@@ -67,6 +76,33 @@ function toCatalogTool(row: CatalogRow): CatalogTool {
 function parseStringArray(value: string): string[] {
   const parsed: unknown = JSON.parse(value);
   return Array.isArray(parsed) && parsed.every((item) => typeof item === "string") ? parsed : [];
+}
+
+export async function listCatalogCategories(db: D1Database): Promise<CatalogCategory[]> {
+  const result = await db.prepare(`
+    SELECT slug, name, description, sort_order AS sortOrder
+    FROM categories
+    ORDER BY sort_order ASC, name COLLATE NOCASE ASC
+  `).bind().all<CatalogCategory>();
+  return result.results;
+}
+
+export async function listCatalogScenes(db: D1Database): Promise<CatalogScene[]> {
+  const result = await db.prepare(`
+    SELECT slug, name, description, sort_order AS sortOrder
+    FROM scenes
+    ORDER BY sort_order ASC, name COLLATE NOCASE ASC
+  `).bind().all<CatalogScene>();
+  return result.results;
+}
+
+export async function getCatalogScene(db: D1Database, slug: string): Promise<CatalogScene | null> {
+  const result = await db.prepare(`
+    SELECT slug, name, description, sort_order AS sortOrder
+    FROM scenes
+    WHERE slug = ?
+  `).bind(slug).all<CatalogScene>();
+  return result.results[0] ?? null;
 }
 
 export async function listPublishedTools(

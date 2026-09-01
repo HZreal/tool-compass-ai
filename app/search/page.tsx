@@ -1,8 +1,9 @@
 import { SearchBox } from "../components/search-box";
 import { SiteHeader } from "../components/site-header";
 import { ToolGrid } from "../components/tool-grid";
+import { listCatalogScenes } from "../lib/catalog";
 import { isValidSearchQuery, searchPublishedTools, type SearchResult } from "../lib/search";
-import { sceneOptions, singleParam } from "../lib/discovery";
+import { singleParam } from "../lib/discovery";
 
 export function SearchResultsView({ query, result }: { query: string; result: SearchResult }) {
   return (
@@ -29,10 +30,10 @@ export function SearchResultsView({ query, result }: { query: string; result: Se
 
 export default async function SearchPage({ searchParams }: { searchParams?: Promise<Record<string, string | string[] | undefined>> }) {
   const query = singleParam((await searchParams ?? {}).q).trim();
-  if (!isValidSearchQuery(query)) {
-    return <SearchResultsView query={query} result={{ tools: [], total: 0, page: 1, totalPages: 0, suggestedScenes: [...sceneOptions] }} />;
-  }
   const { env } = await import("cloudflare:workers");
+  if (!isValidSearchQuery(query)) {
+    return <SearchResultsView query={query} result={{ tools: [], total: 0, page: 1, totalPages: 0, suggestedScenes: await listCatalogScenes(env.DB) }} />;
+  }
   const result = await searchPublishedTools(env.DB, query, 1);
   return <SearchResultsView query={query} result={result} />;
 }

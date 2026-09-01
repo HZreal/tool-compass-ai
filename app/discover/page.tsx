@@ -2,13 +2,13 @@ import { FilterPanel } from "../components/filter-panel";
 import { SearchBox } from "../components/search-box";
 import { SiteHeader } from "../components/site-header";
 import { ToolGrid } from "../components/tool-grid";
-import type { CatalogTool } from "../lib/catalog";
-import { listPublishedTools } from "../lib/catalog";
+import type { CatalogCategory, CatalogScene, CatalogTool } from "../lib/catalog";
+import { listCatalogCategories, listCatalogScenes, listPublishedTools } from "../lib/catalog";
 import { filterDisplayTools, singleParam, type DiscoveryFilters } from "../lib/discovery";
 
 type QueryParams = Record<string, string | string[] | undefined>;
 
-export function DiscoveryPageView({ tools, filters }: { tools: CatalogTool[]; filters: DiscoveryFilters }) {
+export function DiscoveryPageView({ tools, filters, categories, scenes }: { tools: CatalogTool[]; filters: DiscoveryFilters; categories: CatalogCategory[]; scenes: CatalogScene[] }) {
   return (
     <div className="page-frame">
       <SiteHeader searchValue={filters.query} />
@@ -20,7 +20,7 @@ export function DiscoveryPageView({ tools, filters }: { tools: CatalogTool[]; fi
           <SearchBox compact defaultValue={filters.query} />
         </header>
         <div className="catalog-layout">
-          <FilterPanel filters={filters} />
+          <FilterPanel filters={filters} categories={categories} scenes={scenes} />
           <section className="catalog-results" aria-labelledby="results-title">
             <div className="results-heading">
               <div><p className="section-kicker">检索结果</p><h2 id="results-title">{tools.length} 件工具档案</h2></div>
@@ -45,11 +45,11 @@ export default async function DiscoverPage({ searchParams }: { searchParams?: Pr
     featured: singleParam(params.featured) === "true",
   };
   const { env } = await import("cloudflare:workers");
-  const catalogTools = await listPublishedTools(env.DB, {
+  const [catalogTools, categories, scenes] = await Promise.all([listPublishedTools(env.DB, {
     query: filters.query || undefined,
     category: filters.category || undefined,
     scene: filters.scene || undefined,
     featured: filters.featured || undefined,
-  });
-  return <DiscoveryPageView tools={filterDisplayTools(catalogTools, filters)} filters={filters} />;
+  }), listCatalogCategories(env.DB), listCatalogScenes(env.DB)]);
+  return <DiscoveryPageView tools={filterDisplayTools(catalogTools, filters)} filters={filters} categories={categories} scenes={scenes} />;
 }

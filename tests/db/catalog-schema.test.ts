@@ -14,13 +14,15 @@ async function createCatalogDatabase() {
     d1Databases: ["DB"],
   });
   const db = await miniflare.getD1Database("DB");
-  const migration = await readFile(
-    new URL("../../drizzle/0000_catalog.sql", import.meta.url),
+  const migrations = await Promise.all(["0000_catalog.sql", "0001_catalog_metadata_order.sql"].map((file) => readFile(
+    new URL(`../../drizzle/${file}`, import.meta.url),
     "utf8",
-  );
+  )));
 
-  for (const statement of migration.split("--> statement-breakpoint")) {
-    if (statement.trim()) await db.prepare(statement).run();
+  for (const migration of migrations) {
+    for (const statement of migration.split("--> statement-breakpoint")) {
+      if (statement.trim()) await db.prepare(statement).run();
+    }
   }
 
   return { db, miniflare };

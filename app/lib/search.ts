@@ -14,6 +14,7 @@ export type SearchResult = {
 type SearchRow = {
   kind: "meta" | "tool" | "scene";
   total: number;
+  sortOrder: number;
   slug: string;
   name: string;
   description: string;
@@ -53,7 +54,7 @@ export async function searchPublishedTools(db: D1Database, query: string, page =
       ORDER BY id ASC
       LIMIT ? OFFSET ?
     ), tool_rows AS (
-      SELECT 'tool' AS kind, p.total, t.slug, t.name, t.description,
+      SELECT 'tool' AS kind, p.total, 0 AS sortOrder, t.slug, t.name, t.description,
         t.website_url AS websiteUrl, t.pricing, t.tags, t.verified_at AS verifiedAt,
         t.editorial_note AS editorialNote, t.platforms, t.languages, t.status, t.featured,
         GROUP_CONCAT(DISTINCT c.slug) AS categories,
@@ -66,15 +67,15 @@ export async function searchPublishedTools(db: D1Database, query: string, page =
       LEFT JOIN scenes s ON s.id = ts.scene_id
       GROUP BY p.id
     )
-    SELECT kind, total, slug, name, description, websiteUrl, pricing, tags, verifiedAt, editorialNote, platforms, languages, status, featured, categories, scenes FROM tool_rows
+    SELECT kind, total, sortOrder, slug, name, description, websiteUrl, pricing, tags, verifiedAt, editorialNote, platforms, languages, status, featured, categories, scenes FROM tool_rows
     UNION ALL
-    SELECT 'meta' AS kind, total, '', '', '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
+    SELECT 'meta' AS kind, total, 0 AS sortOrder, '', '', '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
     FROM (SELECT COUNT(*) AS total FROM matched)
     UNION ALL
-    SELECT 'scene' AS kind, 0 AS total, slug, name, description, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
+    SELECT 'scene' AS kind, 0 AS total, sort_order AS sortOrder, slug, name, description, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
     FROM scenes
     WHERE NOT EXISTS (SELECT 1 FROM matched)
-    ORDER BY kind ASC, name COLLATE NOCASE ASC
+    ORDER BY kind ASC, sort_order ASC, name COLLATE NOCASE ASC
   `).bind(ftsQuery, SEARCH_PAGE_SIZE, offset).all<SearchRow>();
 
   const toolRows = result.results.filter((row) => row.kind === "tool");

@@ -15,13 +15,17 @@ async function renderHome() {
     d1Databases: ["DB"],
   });
   const db = await miniflare.getD1Database("DB");
-  const migration = await readFile(new URL("../../drizzle/0000_catalog.sql", import.meta.url), "utf8");
-  for (const statement of migration.split("--> statement-breakpoint")) {
-    if (statement.trim()) await db.prepare(statement).run();
+  const migrations = await Promise.all(["0000_catalog.sql", "0001_catalog_metadata_order.sql"].map((file) => readFile(new URL(`../../drizzle/${file}`, import.meta.url), "utf8")));
+  for (const migration of migrations) {
+    for (const statement of migration.split("--> statement-breakpoint")) {
+      if (statement.trim()) await db.prepare(statement).run();
+    }
   }
   await seedCatalog(db);
   const featuredTools = await listPublishedTools(db, { featured: true });
-  return { html: renderToStaticMarkup(<HomeView featuredTools={featuredTools} />), miniflare };
+  const { listCatalogCategories, listCatalogScenes } = await import("../../app/lib/catalog");
+  const [categories, scenes] = await Promise.all([listCatalogCategories(db), listCatalogScenes(db)]);
+  return { html: renderToStaticMarkup(<HomeView featuredTools={featuredTools} categories={categories} scenes={scenes} />), miniflare };
 }
 
 test("renders the AI Scenery heading inside the main landmark", async (t) => {

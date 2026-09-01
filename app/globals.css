@@ -114,6 +114,7 @@ button, input, select { font: inherit; }
 
 .search-box__mark { padding-left: 17px; color: var(--red); font-family: var(--display); font-size: 1.6rem; transform: rotate(-16deg); }
 .search-box input { min-width: 0; border: 0; outline: 0; background: transparent; color: var(--navy); padding: 20px 14px; }
+.search-box input:focus-visible { outline: 3px solid var(--red); outline-offset: 3px; }
 .search-box input::placeholder { color: #757268; }
 .search-box button { align-self: stretch; border: 0; border-left: 1px solid var(--navy); background: var(--navy); color: var(--paper-light); padding: 0 24px; font-weight: 700; cursor: pointer; transition: background .2s ease; }
 .search-box button:hover { background: var(--red); }

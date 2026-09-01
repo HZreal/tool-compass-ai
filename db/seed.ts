@@ -22,23 +22,23 @@ type SeedTool = {
 type SeedDisplayMetadata = Omit<SeedTool, "slug" | "name" | "description" | "websiteUrl" | "category" | "scene">;
 
 const categories = [
-  ["ai-assistants", "AI assistants", "General-purpose AI assistants and language models."],
-  ["code-development", "Code development", "Tools for writing, reviewing and shipping software."],
-  ["image-generation", "Image generation", "Image creation, editing and visual generation."],
-  ["video-audio", "Video and audio", "Video editing, synthesis and audio production."],
-  ["productivity", "Productivity", "Writing, planning and personal productivity."],
-  ["data-research", "Data and research", "Research, analysis and data exploration."],
-  ["automation-agents", "Automation and agents", "Workflow automation and autonomous agents."],
-  ["design-collaboration", "Design and collaboration", "Design systems and collaborative workspaces."],
+  ["ai-assistants", "AI assistants", "General-purpose AI assistants and language models.", 1],
+  ["code-development", "Code development", "Tools for writing, reviewing and shipping software.", 2],
+  ["image-generation", "Image generation", "Image creation, editing and visual generation.", 3],
+  ["video-audio", "Video and audio", "Video editing, synthesis and audio production.", 4],
+  ["productivity", "Productivity", "Writing, planning and personal productivity.", 5],
+  ["data-research", "Data and research", "Research, analysis and data exploration.", 6],
+  ["automation-agents", "Automation and agents", "Workflow automation and autonomous agents.", 7],
+  ["design-collaboration", "Design and collaboration", "Design systems and collaborative workspaces.", 8],
 ] as const;
 
 const scenes = [
-  ["chat", "Chat and writing", "Draft, summarize and converse."],
-  ["coding", "Software delivery", "Build, test and maintain applications."],
-  ["visual", "Visual creation", "Create images, designs and presentations."],
-  ["media", "Media production", "Produce video, audio and voice."],
-  ["research", "Research and analysis", "Find evidence and analyze information."],
-  ["workflow", "Workflow automation", "Connect tools and automate repeatable work."],
+  ["chat", "Chat and writing", "Draft, summarize and converse.", 1],
+  ["coding", "Software delivery", "Build, test and maintain applications.", 2],
+  ["visual", "Visual creation", "Create images, designs and presentations.", 3],
+  ["media", "Media production", "Produce video, audio and voice.", 4],
+  ["research", "Research and analysis", "Find evidence and analyze information.", 5],
+  ["workflow", "Workflow automation", "Connect tools and automate repeatable work.", 6],
 ] as const;
 
 const toolRows: readonly [string, string, string, string, string, string][] = [
@@ -215,11 +215,11 @@ const tools: SeedTool[] = toolRows.map(([slug, name, description, websiteUrl, ca
 
 export async function seedCatalog(db: D1Database): Promise<void> {
   const statements: D1Statement[] = [];
-  for (const [slug, name, description] of categories) {
-    statements.push(db.prepare("INSERT INTO categories (slug, name, description) VALUES (?, ?, ?) ON CONFLICT(slug) DO UPDATE SET name = excluded.name, description = excluded.description").bind(slug, name, description));
+  for (const [slug, name, description, sortOrder] of categories) {
+    statements.push(db.prepare("INSERT INTO categories (slug, name, description, sort_order) VALUES (?, ?, ?, ?) ON CONFLICT(slug) DO UPDATE SET name = excluded.name, description = excluded.description, sort_order = excluded.sort_order").bind(slug, name, description, sortOrder));
   }
-  for (const [slug, name, description] of scenes) {
-    statements.push(db.prepare("INSERT INTO scenes (slug, name, description) VALUES (?, ?, ?) ON CONFLICT(slug) DO UPDATE SET name = excluded.name, description = excluded.description").bind(slug, name, description));
+  for (const [slug, name, description, sortOrder] of scenes) {
+    statements.push(db.prepare("INSERT INTO scenes (slug, name, description, sort_order) VALUES (?, ?, ?, ?) ON CONFLICT(slug) DO UPDATE SET name = excluded.name, description = excluded.description, sort_order = excluded.sort_order").bind(slug, name, description, sortOrder));
   }
   for (const tool of tools) {
     statements.push(db.prepare("INSERT INTO tools (slug, name, description, website_url, pricing, tags, verified_at, editorial_note, platforms, languages, status, featured) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'published', ?) ON CONFLICT(slug) DO UPDATE SET name = excluded.name, description = excluded.description, website_url = excluded.website_url, pricing = excluded.pricing, tags = excluded.tags, verified_at = excluded.verified_at, editorial_note = excluded.editorial_note, platforms = excluded.platforms, languages = excluded.languages, status = excluded.status, featured = excluded.featured, updated_at = CURRENT_TIMESTAMP").bind(tool.slug, tool.name, tool.description, tool.websiteUrl, tool.pricing, JSON.stringify(tool.tags), tool.verifiedAt, tool.editorialNote, JSON.stringify(tool.platforms), JSON.stringify(tool.languages), tool.slug === "chatgpt" ? 1 : 0));

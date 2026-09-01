@@ -1,10 +1,13 @@
-import { categoryOptions, sceneOptions, type DiscoveryFilters } from "../lib/discovery";
+import type { CatalogCategory, CatalogScene } from "../lib/catalog";
+import type { DiscoveryFilters } from "../lib/discovery";
 
 type FilterPanelProps = {
   filters: DiscoveryFilters;
+  categories: CatalogCategory[];
+  scenes: CatalogScene[];
 };
 
-export function FilterPanel({ filters }: FilterPanelProps) {
+export function FilterPanel({ filters, categories, scenes }: FilterPanelProps) {
   return (
     <form className="filter-panel" action="/discover" method="get">
       <div className="filter-panel__heading">
@@ -19,14 +22,14 @@ export function FilterPanel({ filters }: FilterPanelProps) {
         分类
         <select name="category" defaultValue={filters.category ?? ""}>
           <option value="">全部分类</option>
-          {categoryOptions.map((category) => <option key={category.slug} value={category.slug}>{category.name}</option>)}
+          {categories.map((category) => <option key={category.slug} value={category.slug}>{category.name}</option>)}
         </select>
       </label>
       <label>
         任务场景
         <select name="scene" defaultValue={filters.scene ?? ""}>
           <option value="">全部场景</option>
-          {sceneOptions.map((scene) => <option key={scene.slug} value={scene.slug}>{scene.name}</option>)}
+          {scenes.map((scene) => <option key={scene.slug} value={scene.slug}>{scene.name}</option>)}
         </select>
       </label>
       <label>

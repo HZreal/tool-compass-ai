@@ -18,7 +18,7 @@ export function ToolDetailView({ tool, relatedTools }: { tool: CatalogTool; rela
               <h1>{tool.name}</h1>
               <p>{tool.description}</p>
             </div>
-            <a className="button button--red" href={`/go/${tool.slug}`} target="_blank" rel="noreferrer">访问官网 <span aria-hidden="true">↗</span></a>
+            <a className="button button--red" href={tool.websiteUrl} target="_blank" rel="noreferrer">访问官网 <span aria-hidden="true">↗</span></a>
           </header>
 
           <div className="tool-detail__layout">

@@ -9,6 +9,7 @@ export const categories = sqliteTable("categories", {
   slug: text("slug").notNull(),
   name: text("name").notNull(),
   description: text("description").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
 }, (table) => [uniqueIndex("categories_slug_unique").on(table.slug)]);
 
 export const scenes = sqliteTable("scenes", {
@@ -16,6 +17,7 @@ export const scenes = sqliteTable("scenes", {
   slug: text("slug").notNull(),
   name: text("name").notNull(),
   description: text("description").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
 }, (table) => [uniqueIndex("scenes_slug_unique").on(table.slug)]);
 
 export const tools = sqliteTable("tools", {

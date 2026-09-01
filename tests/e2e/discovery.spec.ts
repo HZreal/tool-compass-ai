@@ -24,3 +24,28 @@ test("unknown tool route returns a not-found response", async ({ page }) => {
   const response = await page.goto("/tool/does-not-exist");
   expect(response?.status()).toBe(404);
 });
+
+test("unknown scene route returns a not-found response", async ({ page }) => {
+  const response = await page.goto("/scene/does-not-exist");
+  expect(response?.status()).toBe(404);
+});
+
+test("directory filters submit their current state in the URL", async ({ page }) => {
+  await page.goto("/discover?q=ChatGPT");
+
+  await page.getByLabel("分类").selectOption("ai-assistants");
+  await page.getByLabel("任务场景").selectOption("chat");
+  await page.getByRole("button", { name: "应用筛选" }).click();
+
+  await expect(page).toHaveURL(/\/discover\?q=ChatGPT&category=ai-assistants&scene=chat&platform=&pricing=$/);
+});
+
+test("Tab reaches the search field with a visible keyboard focus indicator", async ({ page }) => {
+  await page.goto("/");
+
+  for (let index = 0; index < 5; index += 1) await page.keyboard.press("Tab");
+
+  const focused = page.locator(":focus");
+  await expect(focused).toHaveAttribute("name", "q");
+  expect(await focused.evaluate((element) => getComputedStyle(element).outlineWidth)).toBe("3px");
+});

@@ -1,11 +1,10 @@
-import type { CatalogTool } from "./lib/catalog";
-import { listPublishedTools } from "./lib/catalog";
-import { categoryOptions, sceneOptions } from "./lib/discovery";
+import type { CatalogCategory, CatalogScene, CatalogTool } from "./lib/catalog";
+import { listCatalogCategories, listCatalogScenes, listPublishedTools } from "./lib/catalog";
 import { SearchBox } from "./components/search-box";
 import { SiteHeader } from "./components/site-header";
 import { ToolGrid } from "./components/tool-grid";
 
-export function HomeView({ featuredTools }: { featuredTools: CatalogTool[] }) {
+export function HomeView({ featuredTools, categories, scenes }: { featuredTools: CatalogTool[]; categories: CatalogCategory[]; scenes: CatalogScene[] }) {
   return (
     <div className="site-shell page-frame">
       <SiteHeader />
@@ -39,9 +38,9 @@ export function HomeView({ featuredTools }: { featuredTools: CatalogTool[] }) {
             <p>把工具名放一边，从你手头的任务开始。</p>
           </div>
           <div className="scene-index">
-            {sceneOptions.map((scene) => (
+            {scenes.map((scene, index) => (
               <a className="scene-card" href={`/scene/${scene.slug}`} key={scene.slug}>
-                <span className="scene-card__index">{scene.index}</span>
+                <span className="scene-card__index">{String(index + 1).padStart(2, "0")}</span>
                 <div><h3>{scene.name}</h3><p>{scene.description}</p></div>
                 <span className="scene-card__arrow" aria-hidden="true">↗</span>
               </a>
@@ -55,7 +54,7 @@ export function HomeView({ featuredTools }: { featuredTools: CatalogTool[] }) {
             <a className="text-link" href="/discover">打开完整图鉴 →</a>
           </div>
           <div className="category-strip">
-            {categoryOptions.map((category, index) => (
+            {categories.map((category, index) => (
               <a href={`/discover?category=${category.slug}`} key={category.slug}>
                 <span>{String(index + 1).padStart(2, "0")}</span>{category.name}
               </a>
@@ -87,6 +86,10 @@ export function Footer() {
 
 export default async function Home() {
   const { env } = await import("cloudflare:workers");
-  const featuredTools = await listPublishedTools(env.DB, { featured: true });
-  return <HomeView featuredTools={featuredTools} />;
+  const [featuredTools, categories, scenes] = await Promise.all([
+    listPublishedTools(env.DB, { featured: true }),
+    listCatalogCategories(env.DB),
+    listCatalogScenes(env.DB),
+  ]);
+  return <HomeView featuredTools={featuredTools} categories={categories} scenes={scenes} />;
 }

@@ -41,4 +41,5 @@ yarn-error.log*
 /.wrangler/
 /outputs/
 /work/
+task4-report.md
 .superpowers/
