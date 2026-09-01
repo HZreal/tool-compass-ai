@@ -4,6 +4,12 @@ import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "driz
 export const toolStatuses = ["draft", "published", "archived"] as const;
 export type ToolStatus = (typeof toolStatuses)[number];
 
+export const submissionTypes = ["recommendation", "correction"] as const;
+export type SubmissionType = (typeof submissionTypes)[number];
+
+export const submissionStatuses = ["pending", "approved", "rejected"] as const;
+export type SubmissionStatus = (typeof submissionStatuses)[number];
+
 export const categories = sqliteTable("categories", {
   id: integer("id").primaryKey(),
   slug: text("slug").notNull(),
@@ -50,3 +56,23 @@ export const toolScenes = sqliteTable("tool_scenes", {
   toolId: integer("tool_id").notNull().references(() => tools.id, { onDelete: "cascade" }),
   sceneId: integer("scene_id").notNull().references(() => scenes.id, { onDelete: "cascade" }),
 }, (table) => [primaryKey({ columns: [table.toolId, table.sceneId] })]);
+
+export const submissions = sqliteTable("submissions", {
+  id: integer("id").primaryKey(),
+  type: text("type", { enum: submissionTypes }).notNull(),
+  toolName: text("tool_name").notNull(),
+  websiteUrl: text("website_url").notNull(),
+  message: text("message").notNull(),
+  email: text("email"),
+  status: text("status", { enum: submissionStatuses }).notNull().default("pending"),
+  reviewNote: text("review_note"),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  reviewedAt: text("reviewed_at"),
+}, (table) => [index("submissions_status_created_at_idx").on(table.status, table.createdAt)]);
+
+export const outboundEvents = sqliteTable("outbound_events", {
+  id: integer("id").primaryKey(),
+  toolId: integer("tool_id").notNull().references(() => tools.id, { onDelete: "cascade" }),
+  sourcePath: text("source_path").notNull(),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [index("outbound_events_tool_created_at_idx").on(table.toolId, table.createdAt)]);

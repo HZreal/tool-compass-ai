@@ -7,6 +7,8 @@ export type D1Database = {
   prepare(query: string): {
     bind(...values: unknown[]): {
       all<T>(): Promise<D1Result<T>>;
+      first<T>(): Promise<T | null>;
+      run(): Promise<unknown>;
     };
   };
 };

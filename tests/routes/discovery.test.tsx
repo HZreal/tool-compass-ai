@@ -154,5 +154,5 @@ test("scene and tool detail views form a readable path through related tools", (
   assert.match(detailHtml, /macOS/);
   assert.match(detailHtml, /Chinese/);
   assert.match(detailHtml, /href="\/tool\/claude"/);
-  assert.match(detailHtml, /href="https:\/\/chatgpt.com"[^>]+target="_blank"[^>]+rel="noreferrer"/);
+  assert.match(detailHtml, /href="\/go\/chatgpt"[^>]+target="_blank"[^>]+rel="noreferrer"/);
 });
