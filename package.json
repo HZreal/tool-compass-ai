@@ -14,7 +14,8 @@
     "test:admin": "node --import tsx --test tests/lib/admin-auth.test.ts tests/routes/admin.test.tsx",
     "test:e2e": "playwright test tests/e2e/discovery.spec.ts",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "db:seed:local": "node --import tsx scripts/seed-local.ts"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",

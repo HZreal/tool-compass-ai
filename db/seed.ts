@@ -274,4 +274,36 @@ export async function seedCatalog(db: D1Database): Promise<void> {
   await db.batch(statements);
 }
 
+function sqlValue(value: string | number | null): string {
+  if (value === null) return "NULL";
+  if (typeof value === "number") return String(value);
+  return `'${value.replaceAll("'", "''")}'`;
+}
+
+export function renderCatalogResetSql(): string {
+  const statements = [
+    "DELETE FROM tool_categories",
+    "DELETE FROM tool_scenes",
+    "DELETE FROM tools",
+    "DELETE FROM categories",
+    "DELETE FROM scenes",
+    ...categories.map(([slug, name, description, sortOrder]) =>
+      `INSERT INTO categories (slug, name, description, sort_order) VALUES (${[slug, name, description, sortOrder].map(sqlValue).join(", ")})`,
+    ),
+    ...scenes.map(([slug, name, description, sortOrder]) =>
+      `INSERT INTO scenes (slug, name, description, sort_order) VALUES (${[slug, name, description, sortOrder].map(sqlValue).join(", ")})`,
+    ),
+    ...tools.flatMap((tool) => [
+      `INSERT INTO tools (slug, name, aliases, description, website_url, logo_url, region, pricing, tags, verified_at, editorial_note, platforms, languages, status, featured, featured_rank) VALUES (${[
+        tool.slug, tool.name, JSON.stringify(tool.aliases), tool.description, tool.websiteUrl, tool.logoUrl, tool.region,
+        tool.pricing, JSON.stringify(tool.tags), tool.verifiedAt, tool.editorialNote, JSON.stringify(tool.platforms),
+        JSON.stringify(tool.languages), "published", tool.featuredRank === null ? 0 : 1, tool.featuredRank,
+      ].map(sqlValue).join(", ")})`,
+      `INSERT INTO tool_categories (tool_id, category_id) SELECT tools.id, categories.id FROM tools, categories WHERE tools.slug = ${sqlValue(tool.slug)} AND categories.slug = ${sqlValue(tool.category)}`,
+      `INSERT INTO tool_scenes (tool_id, scene_id) SELECT tools.id, scenes.id FROM tools, scenes WHERE tools.slug = ${sqlValue(tool.slug)} AND scenes.slug = ${sqlValue(tool.scene)}`,
+    ]),
+  ];
+  return `${statements.join("\n--> statement-breakpoint\n")};\n`;
+}
+
 export { categories, scenes, tools };

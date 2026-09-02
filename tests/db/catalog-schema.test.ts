@@ -5,7 +5,7 @@ import { Miniflare } from "miniflare";
 
 import { getPublishedTool, listPublishedTools } from "../../app/lib/db";
 import { searchPublishedTools } from "../../app/lib/search";
-import { seedCatalog } from "../../db/seed";
+import { renderCatalogResetSql, seedCatalog } from "../../db/seed";
 
 async function createCatalogDatabase() {
   const miniflare = new Miniflare({
@@ -114,6 +114,22 @@ test("seed catalog uses the product taxonomy and exposes editorial discovery fie
   assert.equal(chatgpt?.region, "overseas");
   assert.ok(chatgpt?.logoUrl?.startsWith("https://"));
   assert.equal(chatgpt?.featuredRank, 1);
+});
+
+test("catalog reset SQL removes legacy taxonomy and recreates the product seed", async (t) => {
+  const { db, miniflare } = await createCatalogDatabase();
+  t.after(() => miniflare.dispose());
+  await seedCatalog(db);
+  await db.prepare("INSERT INTO categories (slug, name, description, sort_order) VALUES ('legacy', 'Legacy', 'Old seed', 99)").run();
+
+  for (const statement of renderCatalogResetSql().split("--> statement-breakpoint")) {
+    if (statement.trim()) await db.prepare(statement).run();
+  }
+
+  const counts = await db.prepare("SELECT (SELECT COUNT(*) FROM categories) AS categories, (SELECT COUNT(*) FROM scenes) AS scenes, (SELECT COUNT(*) FROM tools) AS tools").first<{ categories: number; scenes: number; tools: number }>();
+  assert.deepEqual(counts, { categories: 8, scenes: 6, tools: 80 });
+  assert.equal(await db.prepare("SELECT slug FROM categories WHERE slug = 'legacy'").first(), null);
+  assert.ok((await getPublishedTool(db, "chatgpt"))?.aliases.includes("GPT"));
 });
 
 function pickDisplayMetadata(tool: Awaited<ReturnType<typeof getPublishedTool>> | undefined) {

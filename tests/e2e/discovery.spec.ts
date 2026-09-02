@@ -33,11 +33,11 @@ test("unknown scene route returns a not-found response", async ({ page }) => {
 test("directory filters submit their current state in the URL", async ({ page }) => {
   await page.goto("/discover?q=ChatGPT");
 
-  await page.getByLabel("分类").selectOption("ai-assistants");
-  await page.getByLabel("任务场景").selectOption("chat");
+  await page.getByLabel("分类").selectOption("chat-assistant");
+  await page.getByLabel("任务场景").selectOption("writing");
   await page.getByRole("button", { name: "应用筛选" }).click();
 
-  await expect(page).toHaveURL(/\/discover\?q=ChatGPT&category=ai-assistants&scene=chat&platform=&pricing=$/);
+  await expect(page).toHaveURL(/\/discover\?q=ChatGPT&region=&category=chat-assistant&scene=writing&platform=&pricing=$/);
 });
 
 test("Tab reaches the search field with a visible keyboard focus indicator", async ({ page }) => {
