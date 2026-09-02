@@ -40,9 +40,9 @@
 - Modify: `app/lib/catalog.ts`, `app/lib/search.ts`, `app/lib/public-api.ts`, `app/discover/page.tsx`, `app/components/filter-panel.tsx`, `app/components/tool-grid.tsx`
 - Test: `tests/lib/catalog.test.ts`, `tests/api/search.test.ts`, `tests/routes/discovery.test.tsx`
 
-- [ ] 写失败测试：别名 FTS 命中、地区/平台/定价交集筛选、精选排序、18 条分页和错误页码边界。地区/平台/定价交集与分页已覆盖；别名、排序与边界待补。
+- [ ] 写失败测试：别名 FTS 命中、地区/平台/定价交集筛选、精选排序、18 条分页和错误页码边界。目录和 `/api/tools` 的地区/平台/定价交集与分页已覆盖；别名、排序与边界待补。
 - [x] 以参数绑定的 D1 SQL 实现条件筛选、总数和分页，不再在页面内存中解析定价或平台。定价暂由 D1 中的既有文本字段过滤，待替换为结构化字段。
-- [x] 让目录 URL 同步 `region`、`platform`、`pricing` 和 `page`，展示总数、当前页与翻页控件。
+- [x] 让目录 URL 与 `/api/tools` 同步 `region`、`platform`、`pricing` 和 `page`，展示/返回总数、当前页与翻页控件。
 - [ ] 用 `EXPLAIN QUERY PLAN` 断言常见筛选使用索引；运行相关单元、路由和浏览器测试并提交。
 
 ### Task 3: 单管理员运营闭环

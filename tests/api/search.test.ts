@@ -79,3 +79,28 @@ test("tools API validates query bounds and safely treats FTS operators as text",
     assert.equal(response.status, 200);
   }
 });
+
+test("tools API forwards shareable directory filters and returns pagination metadata", async (t) => {
+  const { db, miniflare } = await createDatabase();
+  t.after(() => miniflare.dispose());
+
+  const response = await createToolsResponse(
+    db,
+    new Request("https://ai-scenery.test/api/tools?region=overseas&platform=web&pricing=free&page=1"),
+  );
+  const payload = await response.json() as { tools: { slug: string }[]; total: number; page: number; totalPages: number };
+  assert.equal(response.status, 200);
+  assert.equal(payload.tools.length, 18);
+  assert.equal(payload.total, 20);
+  assert.equal(payload.page, 1);
+  assert.equal(payload.totalPages, 2);
+
+  const secondResponse = await createToolsResponse(
+    db,
+    new Request("https://ai-scenery.test/api/tools?region=overseas&platform=web&pricing=free&page=2"),
+  );
+  const secondPage = await secondResponse.json() as { tools: { slug: string }[]; page: number };
+  assert.equal(secondPage.tools.length, 2);
+  assert.ok(secondPage.tools.some(({ slug }) => slug === "code-helper-1"));
+  assert.equal(secondPage.page, 2);
+});
