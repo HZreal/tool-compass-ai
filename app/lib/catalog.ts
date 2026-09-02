@@ -1,4 +1,5 @@
 import type { ToolRegion, ToolStatus } from "../../drizzle/schema";
+import { seedCatalog } from "../../db/seed";
 import { toFtsPhrase } from "./search";
 
 export type D1Result<T> = { results: T[] };
@@ -84,6 +85,31 @@ const toolFields = `
   GROUP_CONCAT(DISTINCT s.slug) AS scenes
 `;
 
+// A new Sites D1 binding contains schema migrations but no editorial records.
+// Seed the curated starter catalog exactly once per database binding so the
+// first production request renders the same useful directory as local preview.
+const catalogBootstrapByDatabase = new WeakMap<object, Promise<void>>();
+
+async function ensureCatalogBootstrap(db: D1Database): Promise<void> {
+  const cached = catalogBootstrapByDatabase.get(db);
+  if (cached) return cached;
+
+  const bootstrap = (async () => {
+    const existingTool = await db.prepare("SELECT 1 AS present FROM tools LIMIT 1")
+      .bind()
+      .first<{ present: number }>();
+    if (!existingTool) await seedCatalog(db);
+  })();
+  catalogBootstrapByDatabase.set(db, bootstrap);
+
+  try {
+    await bootstrap;
+  } catch (error) {
+    catalogBootstrapByDatabase.delete(db);
+    throw error;
+  }
+}
+
 function toCatalogTool(row: CatalogRow): CatalogTool {
   return {
     ...row,
@@ -103,6 +129,7 @@ function parseStringArray(value: string): string[] {
 }
 
 export async function listCatalogCategories(db: D1Database): Promise<CatalogCategory[]> {
+  await ensureCatalogBootstrap(db);
   const result = await db.prepare(`
     SELECT slug, name, description, sort_order AS sortOrder
     FROM categories
@@ -112,6 +139,7 @@ export async function listCatalogCategories(db: D1Database): Promise<CatalogCate
 }
 
 export async function listCatalogScenes(db: D1Database): Promise<CatalogScene[]> {
+  await ensureCatalogBootstrap(db);
   const result = await db.prepare(`
     SELECT slug, name, description, sort_order AS sortOrder
     FROM scenes
@@ -121,6 +149,7 @@ export async function listCatalogScenes(db: D1Database): Promise<CatalogScene[]>
 }
 
 export async function getCatalogScene(db: D1Database, slug: string): Promise<CatalogScene | null> {
+  await ensureCatalogBootstrap(db);
   const result = await db.prepare(`
     SELECT slug, name, description, sort_order AS sortOrder
     FROM scenes
@@ -133,6 +162,7 @@ export async function listPublishedTools(
   db: D1Database,
   filters: CatalogFilters = {},
 ): Promise<CatalogTool[]> {
+  await ensureCatalogBootstrap(db);
   const clauses = ["t.status = 'published'"];
   const values: unknown[] = [];
 
@@ -169,6 +199,7 @@ export async function listPublishedToolPage(
   db: D1Database,
   filters: CatalogFilters = {},
 ): Promise<CatalogPage> {
+  await ensureCatalogBootstrap(db);
   const { clauses, values } = buildPublishedToolFilters(filters);
   const page = Math.max(1, Math.min(100, Math.floor(filters.page ?? 1) || 1));
   const offset = (page - 1) * CATALOG_PAGE_SIZE;
@@ -219,6 +250,7 @@ function buildPublishedToolFilters(filters: CatalogFilters) {
 }
 
 export async function getPublishedTool(db: D1Database, slug: string): Promise<CatalogTool | null> {
+  await ensureCatalogBootstrap(db);
   const result = await db.prepare(`
     SELECT ${toolFields}
     FROM tools t
