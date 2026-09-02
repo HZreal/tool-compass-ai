@@ -44,9 +44,14 @@ export default defineConfig(async () => {
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
   return {
-    server: isCodexSeatbeltSandbox
-      ? { watch: { useFsEvents: false, usePolling: true } }
-      : undefined,
+    server: {
+      watch: {
+        // Worker persistence changes while a request is served. Watching it
+        // creates an HMR loop that disconnects the browser client.
+        ignored: ["**/.wrangler/**", "**/test-results/**"],
+        ...(isCodexSeatbeltSandbox ? { useFsEvents: false, usePolling: true } : {}),
+      },
+    },
     plugins: [
       vinext(),
       sites(),
