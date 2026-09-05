@@ -14,7 +14,7 @@ async function createCatalogDatabase() {
     d1Databases: ["DB"],
   });
   const db = await miniflare.getD1Database("DB");
-  const migrations = await Promise.all(["0000_catalog.sql", "0001_catalog_metadata_order.sql", "0002_submissions_outbound.sql", "0003_admin_audit_events.sql", "0004_submission_review_audit_trigger.sql", "0005_catalog_contract.sql"].map((file) => readFile(
+  const migrations = await Promise.all(["0000_catalog.sql", "0001_catalog_metadata_order.sql", "0002_submissions_outbound.sql", "0003_admin_audit_events.sql", "0004_submission_review_audit_trigger.sql", "0005_catalog_contract.sql", "0006_structured_pricing.sql", "0008_tool_sources.sql"].map((file) => readFile(
     new URL(`../../drizzle/${file}`, import.meta.url),
     "utf8",
   )));
@@ -51,7 +51,7 @@ test("seeding twice keeps the catalog unique and searchable", async (t) => {
   assert.deepEqual(counts, {
     categories: 8,
     scenes: 6,
-    tools: 80,
+    tools: 92,
     tool_categories: counts?.unique_tool_categories,
     unique_tool_categories: counts?.unique_tool_categories,
     tool_scenes: counts?.unique_tool_scenes,
@@ -78,10 +78,10 @@ test("seeded published tools expose their display metadata through catalog and F
   await seedCatalog(db);
 
   const expectedDisplayMetadata = {
-    pricing: "Free tier; Plus and Pro subscriptions",
+    pricing: "官方提供 Free 免费版与个人、企业付费套餐；付费扩展模型、功能和用量，仍受适用额度与使用规则约束。",
     tags: ["chat", "writing", "multimodal"],
-    verifiedAt: "2026-08-31",
-    editorialNote: "A reliable general-purpose assistant for drafting, brainstorming, and everyday problem-solving.",
+    verifiedAt: "2026-09-05",
+    editorialNote: "适合从问题讨论到内容初稿的综合任务；上传、图像和研究等能力有套餐限制，重要事实及生成代码需自行复核。",
     platforms: ["web", "macOS", "Windows", "iOS", "Android"],
     languages: ["Chinese", "English", "Japanese"],
   };
@@ -110,7 +110,7 @@ test("seed catalog uses the product taxonomy and exposes editorial discovery fie
   );
 
   const chatgpt = await getPublishedTool(db, "chatgpt");
-  assert.deepEqual(chatgpt?.aliases, ["OpenAI ChatGPT", "GPT"]);
+  assert.deepEqual(chatgpt?.aliases, ["OpenAI ChatGPT", "GPT", "Chat GPT"]);
   assert.equal(chatgpt?.region, "overseas");
   assert.ok(chatgpt?.logoUrl?.startsWith("https://"));
   assert.equal(chatgpt?.featuredRank, 1);
@@ -127,7 +127,7 @@ test("catalog reset SQL removes legacy taxonomy and recreates the product seed",
   }
 
   const counts = await db.prepare("SELECT (SELECT COUNT(*) FROM categories) AS categories, (SELECT COUNT(*) FROM scenes) AS scenes, (SELECT COUNT(*) FROM tools) AS tools").first<{ categories: number; scenes: number; tools: number }>();
-  assert.deepEqual(counts, { categories: 8, scenes: 6, tools: 80 });
+  assert.deepEqual(counts, { categories: 8, scenes: 6, tools: 92 });
   assert.equal(await db.prepare("SELECT slug FROM categories WHERE slug = 'legacy'").first(), null);
   assert.ok((await getPublishedTool(db, "chatgpt"))?.aliases.includes("GPT"));
 });

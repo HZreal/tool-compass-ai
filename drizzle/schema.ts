@@ -7,6 +7,9 @@ export type ToolStatus = (typeof toolStatuses)[number];
 export const toolRegions = ["domestic", "overseas"] as const;
 export type ToolRegion = (typeof toolRegions)[number];
 
+export const pricingModels = ['free', 'freemium', 'paid', 'usage_based', 'contact', 'unknown'] as const;
+export type PricingModel = (typeof pricingModels)[number];
+
 export const submissionTypes = ["recommendation", "correction"] as const;
 export type SubmissionType = (typeof submissionTypes)[number];
 
@@ -39,6 +42,8 @@ export const tools = sqliteTable("tools", {
   logoUrl: text("logo_url"),
   region: text("region", { enum: toolRegions }).notNull().default("overseas"),
   pricing: text("pricing").notNull(),
+  pricingModel: text("pricing_model", { enum: pricingModels }).notNull().default('unknown'),
+  sources: text('sources').notNull().default('[]'),
   tags: text("tags").notNull(),
   verifiedAt: text("verified_at").notNull(),
   editorialNote: text("editorial_note").notNull(),
@@ -53,6 +58,7 @@ export const tools = sqliteTable("tools", {
   uniqueIndex("tools_slug_unique").on(table.slug),
   index("tools_status_featured_rank_idx").on(table.status, table.featured, table.featuredRank),
   index("tools_status_region_idx").on(table.status, table.region),
+  index("tools_status_pricing_model_idx").on(table.status, table.pricingModel),
 ]);
 
 export const toolCategories = sqliteTable("tool_categories", {
@@ -65,6 +71,24 @@ export const toolScenes = sqliteTable("tool_scenes", {
   sceneId: integer("scene_id").notNull().references(() => scenes.id, { onDelete: "cascade" }),
 }, (table) => [primaryKey({ columns: [table.toolId, table.sceneId] })]);
 
+export const tags = sqliteTable('tags', {
+  id: integer('id').primaryKey(),
+  slug: text('slug').notNull().unique(),
+  name: text('name').notNull().unique(),
+  description: text('description').notNull().default(''),
+  sortOrder: integer('sort_order').notNull().default(0),
+});
+
+export const toolTags = sqliteTable('tool_tags', {
+  toolId: integer('tool_id').notNull().references(() => tools.id, { onDelete: 'cascade' }),
+  tagId: integer('tag_id').notNull().references(() => tags.id, { onDelete: 'cascade' }),
+}, table => [primaryKey({ columns: [table.toolId, table.tagId] })]);
+
+export const catalogImports = sqliteTable('catalog_imports', {
+  id: text('id').primaryKey(),
+  importedAt: text('imported_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
 export const submissions = sqliteTable("submissions", {
   id: integer("id").primaryKey(),
   type: text("type", { enum: submissionTypes }).notNull(),
@@ -76,6 +100,7 @@ export const submissions = sqliteTable("submissions", {
   reviewNote: text("review_note"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   reviewedAt: text("reviewed_at"),
+  convertedToolId: integer("converted_tool_id").references(() => tools.id, { onDelete: 'set null' }).unique(),
 }, (table) => [index("submissions_status_created_at_idx").on(table.status, table.createdAt)]);
 
 export const outboundEvents = sqliteTable("outbound_events", {

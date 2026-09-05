@@ -7,6 +7,7 @@ import {
 import {
   adminToolMutationSchema,
   adminToolSchema,
+  publishableToolSchema,
   type AdminToolInput,
 } from "../../../lib/validation";
 
@@ -36,10 +37,11 @@ export async function createAdminToolsResponse(
     return jsonError("请求格式必须为 JSON", 400);
   }
 
+  try {
   if (request.method === "POST") {
     const parsed = adminToolSchema.safeParse(payload);
     if (!parsed.success) return validationError(parsed.error.issues[0]?.message);
-    return createDraft(db, parsed.data);
+    return await createDraft(db, parsed.data);
   }
 
   if (request.method === "PATCH") {
@@ -47,12 +49,16 @@ export async function createAdminToolsResponse(
     if (!parsed.success) return validationError(parsed.error.issues[0]?.message);
 
     if (parsed.data.action === "edit") {
-      return editTool(db, parsed.data.id, parsed.data.tool);
+      return await editTool(db, parsed.data.id, parsed.data.tool);
     }
-    return setToolStatus(db, parsed.data.id, parsed.data.action);
+    return await setToolStatus(db, parsed.data.id, parsed.data.action);
   }
 
   return jsonError("不支持的请求方法", 405);
+  } catch (error) {
+    if (String(error).includes("UNIQUE constraint")) return jsonError("该 slug 已存在，请刷新后重试", 409);
+    return jsonError("保存失败，未保存任何变更，请刷新后重试", 500);
+  }
 }
 
 async function createDraft(db: D1Database, tool: AdminToolInput): Promise<Response> {
@@ -69,8 +75,9 @@ async function createDraft(db: D1Database, tool: AdminToolInput): Promise<Respon
     db.prepare(`
       INSERT INTO tools (
         slug, name, description, website_url, pricing, tags, verified_at,
-        editorial_note, platforms, languages, status, featured
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?)
+        editorial_note, platforms, languages, status, featured, featured_rank, pricing_model,
+        region, aliases, logo_url, sources
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?)
     `).bind(...toolValues(tool)),
     ...relationStatements(db, tool),
     db.prepare(`
@@ -96,10 +103,14 @@ async function editTool(
   if (taxonomyError) return jsonError(taxonomyError, 422);
 
   const current = await db
-    .prepare("SELECT id FROM tools WHERE id = ?")
+    .prepare("SELECT id, status FROM tools WHERE id = ?")
     .bind(id)
-    .first<{ id: number }>();
+    .first<{ id: number; status: string }>();
   if (!current) return jsonError("工具不存在", 404);
+  if (current.status === "published") {
+    const validated = publishableToolSchema.safeParse(tool);
+    if (!validated.success) return jsonError(`已发布工具资料必须完整：${validated.error.issues[0]?.message}`, 422);
+  }
 
   const duplicate = await db
     .prepare("SELECT id FROM tools WHERE slug = ? AND id != ?")
@@ -112,7 +123,8 @@ async function editTool(
       UPDATE tools SET
         slug = ?, name = ?, description = ?, website_url = ?, pricing = ?,
         tags = ?, verified_at = ?, editorial_note = ?, platforms = ?, languages = ?,
-        featured = ?, updated_at = CURRENT_TIMESTAMP
+        featured = ?, featured_rank = ?, pricing_model = ?,
+        region = ?, aliases = ?, logo_url = ?, sources = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `).bind(...toolValues(tool), id),
     db.prepare("DELETE FROM tool_categories WHERE tool_id = ?").bind(id),
@@ -135,8 +147,10 @@ async function setToolStatus(
   const tool = await db.prepare(`
     SELECT
       t.id, t.slug, t.name, t.description, t.website_url AS websiteUrl,
+      t.region, t.aliases, t.logo_url AS logoUrl, t.sources,
       t.pricing, t.tags, t.verified_at AS verifiedAt,
       t.editorial_note AS editorialNote, t.platforms, t.languages, t.featured,
+      t.featured_rank AS featuredRank, t.pricing_model AS pricingModel,
       GROUP_CONCAT(DISTINCT c.slug) AS categorySlugs,
       GROUP_CONCAT(DISTINCT s.slug) AS sceneSlugs
     FROM tools t
@@ -149,9 +163,11 @@ async function setToolStatus(
   `).bind(id).first<PublicationCandidateRow>();
   if (!tool) return jsonError("工具不存在", 404);
   if (action === "publish") {
-    const publishable = adminToolSchema.safeParse({
+    const publishable = publishableToolSchema.safeParse({
       ...tool,
       tags: parseStoredList(tool.tags),
+      aliases: parseStoredList(tool.aliases),
+      sources: parseStoredList(tool.sources),
       platforms: parseStoredList(tool.platforms),
       languages: parseStoredList(tool.languages),
       featured: Boolean(tool.featured),
@@ -182,6 +198,10 @@ type PublicationCandidateRow = {
   name: string;
   description: string;
   websiteUrl: string;
+  region: "domestic" | "overseas";
+  aliases: string;
+  logoUrl: string | null;
+  sources: string;
   pricing: string;
   tags: string;
   verifiedAt: string;
@@ -217,6 +237,12 @@ function toolValues(tool: AdminToolInput): unknown[] {
     JSON.stringify(tool.platforms),
     JSON.stringify(tool.languages),
     tool.featured ? 1 : 0,
+    tool.featuredRank,
+    tool.pricingModel,
+    tool.region,
+    JSON.stringify(tool.aliases),
+    tool.logoUrl || null,
+    JSON.stringify(tool.sources),
   ];
 }
 
@@ -233,11 +259,11 @@ function relationStatements(
     ...new Set(tool.categorySlugs),
   ].map((slug) => db.prepare(`
     INSERT INTO tool_categories (tool_id, category_id)
-    SELECT ${toolSelector}, id FROM categories WHERE slug = ?
+    VALUES (${toolSelector}, (SELECT id FROM categories WHERE slug = ?))
   `).bind(toolSelectorValue, slug)).concat(
     [...new Set(tool.sceneSlugs)].map((slug) => db.prepare(`
       INSERT INTO tool_scenes (tool_id, scene_id)
-      SELECT ${toolSelector}, id FROM scenes WHERE slug = ?
+      VALUES (${toolSelector}, (SELECT id FROM scenes WHERE slug = ?))
     `).bind(toolSelectorValue, slug)),
   );
 }

@@ -21,7 +21,8 @@ export function AdminSubmissionsView({ submissions }: { submissions: AdminSubmis
             <a href={submission.websiteUrl} target="_blank" rel="noopener noreferrer">{submission.websiteUrl}</a>
             <p>{submission.message}</p>
             {submission.email ? <small>联系邮箱：{submission.email}</small> : null}
-            {submission.status === "pending" ? <SubmissionReviewForm id={submission.id} /> : (
+            {submission.convertedToolId ? <p><a href="/admin/tools">已转为工具草稿 #{submission.convertedToolId}，前往工具管理</a></p> : null}
+            {submission.status === "pending" ? <SubmissionReviewForm id={submission.id} canConvert={submission.type === "recommendation"} /> : (
               <p className="admin-review-note"><strong>审核说明</strong>{submission.reviewNote}</p>
             )}
           </article>

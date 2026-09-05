@@ -15,8 +15,9 @@ test("homepage search reaches a verified tool detail without horizontal overflow
 
   await expect(page).toHaveURL(/\/tool\/chatgpt$/);
   await expect(page.getByRole("heading", { level: 1, name: "ChatGPT" })).toBeVisible();
-  await expect(page.getByText("A reliable general-purpose assistant for drafting, brainstorming, and everyday problem-solving.")).toBeVisible();
-  await expect(page.getByText("2026-08-31 核验")).toBeVisible();
+  await expect(page.getByRole("region", { name: "编辑说明" }).locator("blockquote")).toHaveText(/\S+/);
+  await expect(page.locator(".tool-detail__hero time")).toHaveAttribute("datetime", /^\d{4}-\d{2}-\d{2}$/);
+  await expect(page.getByRole("link", { name: "官方资料 1", exact: true })).toHaveAttribute("href", "https://chatgpt.com/pricing/");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
@@ -43,9 +44,11 @@ test("directory filters submit their current state in the URL", async ({ page })
 test("Tab reaches the search field with a visible keyboard focus indicator", async ({ page }) => {
   await page.goto("/");
 
-  for (let index = 0; index < 5; index += 1) await page.keyboard.press("Tab");
-
-  const focused = page.locator(":focus");
-  await expect(focused).toHaveAttribute("name", "q");
-  expect(await focused.evaluate((element) => getComputedStyle(element).outlineWidth)).toBe("3px");
+  const search = page.getByRole("searchbox", { name: "搜索 AI 工具" }).filter({ visible: true }).first();
+  for (let index = 0; index < 20; index += 1) {
+    await page.keyboard.press("Tab");
+    if (await search.evaluate((element) => element === document.activeElement)) break;
+  }
+  await expect(search).toBeFocused();
+  expect(await search.evaluate((element) => getComputedStyle(element).outlineWidth)).toBe("3px");
 });

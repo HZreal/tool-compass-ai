@@ -21,6 +21,8 @@ export function AdminHomeView({
         <a className="admin-dashboard-card admin-dashboard-card--accent" href="/admin/submissions">
           <span>02 / 队列</span><strong>{pendingSubmissionCount}</strong><h2>审核投稿</h2><p>核验读者推荐与资料纠错。</p>
         </a>
+        <a className="admin-dashboard-card" href="/admin/taxonomy"><span>03 / 内容组织</span><h2>分类、场景与标签</h2><p>管理名称、描述、排序和工具关联。</p></a>
+        <a className="admin-dashboard-card" href="/admin/operations"><span>04 / 数据维护</span><h2>导入与备份</h2><p>初始化目录、导出备份和恢复数据。</p></a>
       </div>
     </AdminPageShell>
   );
@@ -39,7 +41,7 @@ export function AdminPageShell({
     <div className="admin-shell">
       <header className="admin-header">
         <a className="admin-wordmark" href="/admin"><span>景</span><strong>AI Scenery / Admin</strong></a>
-        <nav aria-label="管理导航"><a href="/admin/tools">工具</a><a href="/admin/submissions">投稿</a><a href="/">查看站点</a></nav>
+        <nav aria-label="管理导航"><a href="/admin/tools">工具</a><a href="/admin/taxonomy">分类与标签</a><a href="/admin/submissions">投稿</a><a href="/admin/operations">数据维护</a><a href="/">查看站点</a></nav>
       </header>
       <main className="admin-main">
         <p className="eyebrow">{eyebrow}</p>

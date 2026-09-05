@@ -35,8 +35,9 @@ export function ToolDetailView({ tool, relatedTools }: { tool: CatalogTool; rela
                 <div><dt>定价</dt><dd>{tool.pricing}</dd></div>
                 <div><dt>平台</dt><dd>{tool.platforms.join(" · ")}</dd></div>
                 <div><dt>语言</dt><dd>{tool.languages.join(" · ")}</dd></div>
-                <div><dt>最后核验</dt><dd>{tool.verifiedAt}</dd></div>
+                <div><dt>资料核对</dt><dd>{tool.verifiedAt || '待复核'}（公开资料核对，不代表实际试用）</dd></div>
               </dl>
+              {Boolean(tool.sources?.length) && <div><h3>官方资料来源</h3><ul>{tool.sources!.map((url, index) => <li key={url}><a href={url} target="_blank" rel="noopener noreferrer">官方资料 {index + 1}</a></li>)}</ul></div>}
             </aside>
           </div>
         </article>

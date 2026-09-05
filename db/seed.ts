@@ -1,8 +1,7 @@
-type D1Statement = { bind: (...values: unknown[]) => D1Statement };
-type D1Database = {
-  prepare: (query: string) => D1Statement;
-  batch: (statements: D1Statement[]) => Promise<unknown>;
-};
+import type { D1Database, D1PreparedStatement as D1Statement } from '../app/lib/catalog';
+import type { PricingModel } from '../drizzle/schema';
+import domesticCuration from './curated-domestic.json';
+import internationalCuration from './curated-international.json';
 
 type SeedTool = {
   slug: string;
@@ -12,6 +11,7 @@ type SeedTool = {
   category: string;
   scene: string;
   pricing: string;
+  pricingModel: PricingModel;
   tags: string[];
   verifiedAt: string;
   editorialNote: string;
@@ -21,9 +21,10 @@ type SeedTool = {
   logoUrl: string;
   region: "domestic" | "overseas";
   featuredRank: number | null;
+  sources?: string[];
 };
 
-type SeedDisplayMetadata = Omit<SeedTool, "slug" | "name" | "description" | "websiteUrl" | "category" | "scene">;
+type SeedDisplayMetadata = Omit<SeedTool, "slug" | "name" | "description" | "websiteUrl" | "category" | "scene" | "aliases" | "logoUrl" | "region" | "featuredRank" | "pricingModel">;
 
 const categories = [
   ["chat-assistant", "聊天与问答", "用于问答、总结和通用对话的 AI 工具。", 1],
@@ -254,9 +255,32 @@ const tools: SeedTool[] = toolRows.map(([slug, name, description, websiteUrl, ca
     logoUrl: `https://logo.clearbit.com/${new URL(websiteUrl).hostname}`,
     region: domesticSlugs.has(slug) ? "domestic" : "overseas",
     featuredRank: slug === "chatgpt" ? 1 : null,
+    pricingModel: 'unknown',
     ...metadata,
   };
 });
+
+// Only these records received a fresh official-source review. Other inherited
+// records retain unknown structured pricing until an editor verifies them.
+for (const record of [...domesticCuration.tools, ...internationalCuration.tools]) {
+  const existing = tools.find(tool => tool.slug === record.slug);
+  const curated: SeedTool = {
+    slug: record.slug, name: record.name, description: record.description,
+    websiteUrl: record.website, category: record.category, scene: record.scenes[0]!,
+    pricing: record.pricingNote, pricingModel: record.pricingModel as PricingModel,
+    tags: existing?.tags ?? [record.category, ...record.scenes],
+    verifiedAt: record.checkedAt, editorialNote: record.editorialNote,
+    platforms: existing?.platforms ?? record.platforms.map(value => value === 'Web' ? 'web' : value),
+    languages: existing?.languages ?? record.languages,
+    aliases: [...new Set([...(existing?.aliases ?? []), ...record.aliases])],
+    logoUrl: existing?.logoUrl ?? '',
+    region: domesticCuration.tools.some(tool => tool.slug === record.slug) ? 'domestic' : 'overseas',
+    featuredRank: existing?.featuredRank ?? (record.slug === 'deepseek' ? 2 : record.slug === 'kimi' ? 3 : null),
+    sources: record.sources,
+  };
+  if (existing) Object.assign(existing, curated);
+  else tools.push(curated);
+}
 
 export async function seedCatalog(db: D1Database): Promise<void> {
   const statements: D1Statement[] = [];
@@ -272,6 +296,9 @@ export async function seedCatalog(db: D1Database): Promise<void> {
     statements.push(db.prepare("INSERT OR IGNORE INTO tool_scenes (tool_id, scene_id) SELECT tools.id, scenes.id FROM tools, scenes WHERE tools.slug = ? AND scenes.slug = ?").bind(tool.slug, tool.scene));
   }
   await db.batch(statements);
+  for (const tool of tools) {
+    await db.prepare("UPDATE tools SET pricing_model = ?, sources = ? WHERE slug = ?").bind(tool.pricingModel, JSON.stringify(tool.sources ?? []), tool.slug).run();
+  }
 }
 
 function sqlValue(value: string | number | null): string {
@@ -301,6 +328,7 @@ export function renderCatalogResetSql(): string {
       ].map(sqlValue).join(", ")})`,
       `INSERT INTO tool_categories (tool_id, category_id) SELECT tools.id, categories.id FROM tools, categories WHERE tools.slug = ${sqlValue(tool.slug)} AND categories.slug = ${sqlValue(tool.category)}`,
       `INSERT INTO tool_scenes (tool_id, scene_id) SELECT tools.id, scenes.id FROM tools, scenes WHERE tools.slug = ${sqlValue(tool.slug)} AND scenes.slug = ${sqlValue(tool.scene)}`,
+      `UPDATE tools SET pricing_model = ${sqlValue(tool.pricingModel)}, sources = ${sqlValue(JSON.stringify(tool.sources ?? []))} WHERE slug = ${sqlValue(tool.slug)}`,
     ]),
   ];
   return `${statements.join("\n--> statement-breakpoint\n")};\n`;

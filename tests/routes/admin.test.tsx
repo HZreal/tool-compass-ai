@@ -10,6 +10,7 @@ import { AdminToolsView } from "../../app/admin/tools/page";
 import { createAdminSubmissionsResponse } from "../../app/api/admin/submissions/route";
 import { createAdminToolsResponse } from "../../app/api/admin/tools/route";
 import { listPublishedTools } from "../../app/lib/catalog";
+import { listAdminTools } from "../../app/lib/admin-data";
 
 const ADMIN_USER_ID = "user-admin-001";
 const ADMIN_EMAIL = "editor@example.com";
@@ -29,6 +30,8 @@ async function createDatabase() {
       "0003_admin_audit_events.sql",
       "0004_submission_review_audit_trigger.sql",
       "0005_catalog_contract.sql",
+      "0006_structured_pricing.sql", "0008_tool_sources.sql",
+      "0007_admin_taxonomy.sql",
     ].map((file) =>
       readFile(new URL(`../../drizzle/${file}`, import.meta.url), "utf8"),
     ),
@@ -82,6 +85,90 @@ const completeTool = {
   categorySlugs: ["productivity"],
   sceneSlugs: ["research"],
 };
+
+test("admin tool metadata round-trips region, aliases, logo and sources on create and edit", async (t) => {
+  const { db, miniflare } = await createDatabase(); t.after(() => miniflare.dispose());
+  const metadata = { region: "domestic", aliases: ["研究助手", "Research Helper"], logoUrl: "https://example.com/logo.png", sources: ["https://example.com/docs", "https://example.com/pricing"] };
+  const created = await createAdminToolsResponse(db, adminRequest("/api/admin/tools", "POST", { ...completeTool, ...metadata }), ADMIN_USER_ID);
+  assert.equal(created.status, 201);
+  const { tool } = await created.json() as { tool: { id: number } };
+  const saved = (await listAdminTools(db))[0];
+  for (const [key, value] of Object.entries(metadata)) assert.deepEqual(saved[key as keyof typeof saved], value);
+  const changed = { ...metadata, region: "overseas", aliases: ["Changed alias"], logoUrl: "", sources: ["https://example.com/about"] };
+  assert.equal((await createAdminToolsResponse(db, adminRequest("/api/admin/tools", "PATCH", { id: tool.id, action: "edit", tool: { ...completeTool, ...changed } }), ADMIN_USER_ID)).status, 200);
+  const edited = (await listAdminTools(db))[0];
+  assert.equal(edited.region, "overseas");
+  assert.deepEqual(edited.aliases, ["Changed alias"]);
+  assert.equal(edited.logoUrl, null);
+  assert.deepEqual(edited.sources, ["https://example.com/about"]);
+  assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM tools_fts WHERE tools_fts MATCH 'Changed'").first<{ n: number }>())?.n, 1);
+});
+
+test("admin tool URLs reject non-HTTPS and credentials for website, logo and sources", async (t) => {
+  const { db, miniflare } = await createDatabase(); t.after(() => miniflare.dispose());
+  for (const url of ["http://example.com", "javascript:alert(1)", "https://user:secret@example.com", "https://user@example.com"]) {
+    for (const field of ["websiteUrl", "logoUrl", "sources"]) {
+      const response = await createAdminToolsResponse(db, adminRequest("/api/admin/tools", "POST", { ...completeTool, [field]: field === "sources" ? [url] : url }), ADMIN_USER_ID);
+      assert.equal(response.status, 400, `${field}: ${url}`);
+    }
+  }
+  assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM tools").first<{ n: number }>())?.n, 0);
+});
+
+test("incomplete drafts can be saved but cannot be published", async (t) => {
+  const { db, miniflare } = await createDatabase();
+  t.after(() => miniflare.dispose());
+  const created = await createAdminToolsResponse(db, adminRequest("/api/admin/tools", "POST", {
+    slug: "incomplete", name: "Incomplete",
+  }), ADMIN_USER_ID);
+  assert.equal(created.status, 201);
+  const body = await created.json() as { tool: { id: number } };
+  const published = await createAdminToolsResponse(db, adminRequest("/api/admin/tools", "PATCH", {
+    id: body.tool.id, action: "publish",
+  }), ADMIN_USER_ID);
+  assert.equal(published.status, 422);
+  assert.equal(published.headers.get("cache-control"), "no-store");
+});
+
+test("conversion creates exactly one private draft and links the submission", async (t) => {
+  const { db, miniflare } = await createDatabase();
+  t.after(() => miniflare.dispose());
+  await db.prepare("INSERT INTO submissions (id,type,tool_name,website_url,message) VALUES (99,'recommendation','New tool','https://example.com/','Worth reviewing')").run();
+  const responses = await Promise.all([1, 2].map(() => createAdminSubmissionsResponse(db,
+    adminRequest("/api/admin/submissions", "PATCH", { id: 99, decision: "convert", reviewNote: "Create draft for verification" }), ADMIN_USER_ID)));
+  assert.ok(responses.every((response) => response.status === 200));
+  const bodies = await Promise.all(responses.map((response) => response.json())) as { submission: { convertedToolId: number } }[];
+  assert.equal(bodies[0].submission.convertedToolId, bodies[1].submission.convertedToolId);
+  assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM tools").first<{ n: number }>())?.n, 1);
+  assert.equal((await db.prepare("SELECT status FROM tools").first<{ status: string }>())?.status, "draft");
+  assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM admin_audit_events WHERE action = 'submission.convert'").first<{ n: number }>())?.n, 1);
+});
+
+test("published tools retain complete category and scene data and structured pricing/rank", async (t) => {
+  const { db, miniflare } = await createDatabase(); t.after(() => miniflare.dispose());
+  const payload = { ...completeTool, pricingModel: "usage_based", featured: true, featuredRank: 2 };
+  const created = await createAdminToolsResponse(db, adminRequest("/api/admin/tools", "POST", payload), ADMIN_USER_ID);
+  const { tool } = await created.json() as { tool: { id: number } };
+  const stored = await db.prepare("SELECT pricing_model, featured_rank FROM tools WHERE id=?").bind(tool.id).first();
+  assert.deepEqual(stored, { pricing_model: "usage_based", featured_rank: 2 });
+  assert.equal((await createAdminToolsResponse(db, adminRequest("/api/admin/tools", "PATCH", { id: tool.id, action: "publish" }), ADMIN_USER_ID)).status, 200);
+  for (const incomplete of [{ ...payload, categorySlugs: [] }, { ...payload, sceneSlugs: [] }, { ...payload, description: "" }]) {
+    assert.equal((await createAdminToolsResponse(db, adminRequest("/api/admin/tools", "PATCH", { id: tool.id, action: "edit", tool: incomplete }), ADMIN_USER_ID)).status, 422);
+  }
+  assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM tool_scenes WHERE tool_id=?").bind(tool.id).first<{ n: number }>())?.n, 1);
+});
+
+test("conversion rolls back the draft and review when audit insertion fails", async (t) => {
+  const { db, miniflare } = await createDatabase(); t.after(() => miniflare.dispose());
+  await db.prepare("INSERT INTO submissions (id,type,tool_name,website_url,message) VALUES (98,'recommendation','New tool','https://example.com/','Worth reviewing')").run();
+  await db.prepare("CREATE TRIGGER fail_conversion_audit BEFORE INSERT ON admin_audit_events WHEN NEW.action='submission.convert' BEGIN SELECT RAISE(ABORT, 'forced audit failure'); END").run();
+  const response = await createAdminSubmissionsResponse(db, adminRequest("/api/admin/submissions", "PATCH", { id: 98, decision: "convert", reviewNote: "Create draft" }), ADMIN_USER_ID);
+  assert.equal(response.status, 500);
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM tools").first<{ n: number }>())?.n, 0);
+  assert.equal((await db.prepare("SELECT status FROM submissions WHERE id=98").first<{ status: string }>())?.status, "pending");
+  assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM admin_audit_events").first<{ n: number }>())?.n, 0);
+});
 
 test("admin tool routes reject anonymous and signed-in non-admin requests", async (t) => {
   const { db, miniflare } = await createDatabase();
@@ -336,9 +423,18 @@ test("admin views expose editorial tools and review actions without user managem
   assert.match(home, /href="\/admin\/submissions"/);
   assert.match(tools, /<form[^>]+action="\/api\/admin\/tools"/);
   assert.match(tools, /name="slug"/);
+  assert.match(tools, /name="pricingModel"/);
+  assert.match(tools, /name="featuredRank"/);
+  assert.match(tools, /name="region"/);
+  assert.match(tools, /name="aliases"/);
+  assert.match(tools, /name="logoUrl"/);
+  assert.match(tools, /name="sources"/);
+  assert.match(home, /href="\/admin\/taxonomy"/);
+  assert.match(home, /href="\/admin\/operations"/);
   assert.match(tools, /AI Notebook/);
   assert.match(submissions, /Tool A/);
   assert.match(submissions, /value="approved"/);
   assert.match(submissions, /value="rejected"/);
+  assert.match(submissions, /value="convert"/);
   assert.doesNotMatch(`${home}${tools}${submissions}`, /用户管理|角色管理/);
 });

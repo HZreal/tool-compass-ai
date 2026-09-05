@@ -13,7 +13,7 @@ async function createDatabase() {
     d1Databases: ["DB"],
   });
   const db = await miniflare.getD1Database("DB");
-  const migrations = await Promise.all(["0000_catalog.sql", "0001_catalog_metadata_order.sql", "0002_submissions_outbound.sql", "0005_catalog_contract.sql"].map(
+  const migrations = await Promise.all(["0000_catalog.sql", "0001_catalog_metadata_order.sql", "0002_submissions_outbound.sql", "0005_catalog_contract.sql", "0006_structured_pricing.sql", "0008_tool_sources.sql"].map(
     (file) => readFile(new URL(`../../drizzle/${file}`, import.meta.url), "utf8"),
   ));
   for (const migration of migrations) {
@@ -112,7 +112,7 @@ test("redirects through an anonymous outbound event that stores only the tool an
   }>();
   assert.deepEqual(event, { toolId: 1, sourcePath: "/scene/chat" });
   const columns = await db.prepare("PRAGMA table_info(outbound_events)").all<{ name: string }>();
-  assert.deepEqual(columns.results.map((column) => column.name), ["id", "tool_id", "source_path", "created_at"]);
+  assert.deepEqual(columns.results.map((column: { name: string }) => column.name), ["id", "tool_id", "source_path", "created_at"]);
 });
 
 test("outbound redirect never persists query parameters or cross-origin referrer details", async (t) => {

@@ -28,6 +28,11 @@ interface ExecutionContext {
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+    const adminPath = url.pathname === '/admin' || url.pathname.startsWith('/admin/') || url.pathname.startsWith('/api/admin/');
+    const origin = request.headers.get('origin');
+    if (adminPath && !['GET','HEAD','OPTIONS'].includes(request.method) && origin && origin !== url.origin) {
+      return Response.json({error:'不允许跨站管理请求'}, {status:403,headers:{'cache-control':'no-store'}});
+    }
 
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
@@ -40,7 +45,11 @@ const worker = {
       }, allowedWidths);
     }
 
-    return handler.fetch(request, env, ctx);
+    const response=await handler.fetch(request, env, ctx);
+    const result=new Response(response.body,response);
+    if(adminPath || !['GET','HEAD'].includes(request.method)) result.headers.set('cache-control','no-store');
+    else if(!url.pathname.startsWith('/assets/') && !url.pathname.startsWith('/_')) result.headers.set('cache-control','no-cache, max-age=0, must-revalidate');
+    return result;
   },
 };
 

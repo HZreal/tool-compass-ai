@@ -12,9 +12,11 @@ export function SiteHeader({ searchValue }: SiteHeaderProps) {
         <small>编辑部工具图鉴</small>
       </a>
       <nav aria-label="主导航">
-        <a href="/discover">工具图鉴</a>
-        <a href="/#scenes">任务场景</a>
-        <a href="/submit">推荐收录</a>
+        <a href="/">首页</a>
+        <a href="/discover">目录</a>
+        <a href="/search">搜索</a>
+        <a href="/submit">投稿</a>
+        <a href="/admin">后台</a>
       </nav>
       <div className="site-header__search"><SearchBox compact id="header-search" defaultValue={searchValue} /></div>
     </header>

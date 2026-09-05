@@ -12,7 +12,7 @@ async function createDatabase() {
     d1Databases: ["DB"],
   });
   const db = await miniflare.getD1Database("DB");
-  const migrations = await Promise.all(["0000_catalog.sql", "0001_catalog_metadata_order.sql", "0005_catalog_contract.sql"].map((file) => readFile(new URL(`../../drizzle/${file}`, import.meta.url), "utf8")));
+  const migrations = await Promise.all(["0000_catalog.sql", "0001_catalog_metadata_order.sql", "0005_catalog_contract.sql", "0006_structured_pricing.sql", "0008_tool_sources.sql"].map((file) => readFile(new URL(`../../drizzle/${file}`, import.meta.url), "utf8")));
   for (const migration of migrations) {
     for (const statement of migration.split("--> statement-breakpoint")) {
       if (statement.trim()) await db.prepare(statement).run();
@@ -25,6 +25,7 @@ async function createDatabase() {
     db.prepare("INSERT INTO tool_categories (tool_id, category_id) VALUES (1, 1), (2, 2), (3, 1), (4, 1)"),
     db.prepare("INSERT INTO tool_scenes (tool_id, scene_id) VALUES (1, 1), (2, 2), (3, 1), (4, 1)"),
   ]);
+  await db.prepare("UPDATE tools SET pricing_model = CASE WHEN id = 2 THEN 'paid' ELSE 'freemium' END").run();
   return { db, miniflare };
 }
 
@@ -81,4 +82,24 @@ test("catalog metadata comes from D1 with names, descriptions, and editorial ord
   ]);
   assert.deepEqual(scene, { slug: "coding", name: "Coding", description: "Build software", sortOrder: 2 });
   assert.equal(await getCatalogScene(db, "not-a-scene"), null);
+});
+
+test('aliases, editorial order, structured pricing and bounded pagination remain independent of prose',async t=>{
+  const {db,miniflare}=await createDatabase();t.after(()=>miniflare.dispose());
+  await db.prepare("UPDATE tools SET aliases='[\"代码别名\"]',featured_rank=5,pricing='not for free',pricing_model='paid' WHERE id=1").run();
+  await db.prepare("UPDATE tools SET featured=1,featured_rank=1,pricing='付费扩展功能',pricing_model='freemium' WHERE id=2").run();
+  assert.deepEqual((await listPublishedToolPage(db,{query:'代码别名'})).tools.map(t=>t.slug),['published-code']);
+  assert.deepEqual((await listPublishedToolPage(db,{featured:true})).tools.map(t=>t.slug),['published-visual','published-code']);
+  assert.deepEqual((await listPublishedToolPage(db,{pricing:'free'})).tools.map(t=>t.slug),['published-visual']);
+  assert.equal((await listPublishedToolPage(db,{pricing:'paid'})).total,2);
+  assert.equal((await listPublishedToolPage(db,{page:-8})).page,1);
+  assert.equal((await listPublishedToolPage(db,{page:Infinity})).page,100);
+  assert.equal((await listPublishedToolPage(db,{page:100})).tools.length,0);
+  for(const [sql,index] of [
+    ["SELECT id FROM tools WHERE status='published' AND region='domestic'",'tools_status_region_idx'],
+    ["SELECT id FROM tools WHERE status='published' AND pricing_model='paid'",'tools_status_pricing_model_idx'],
+  ]) {
+    const plan=await db.prepare('EXPLAIN QUERY PLAN '+sql).all<{detail:string}>();
+    assert.ok(plan.results.some(row=>row.detail.includes(index)),JSON.stringify(plan));
+  }
 });

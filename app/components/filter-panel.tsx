@@ -54,7 +54,7 @@ export function FilterPanel({ filters, categories, scenes }: FilterPanelProps) {
         定价
         <select name="pricing" defaultValue={filters.pricing ?? ""}>
           <option value="">不限</option>
-          <option value="free">免费或开源</option>
+          <option value="free">可免费使用（含免费额度）</option>
           <option value="paid">提供付费方案</option>
         </select>
       </label>

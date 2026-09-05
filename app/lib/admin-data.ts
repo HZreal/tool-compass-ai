@@ -7,7 +7,13 @@ export type AdminToolRecord = {
   name: string;
   description: string;
   websiteUrl: string;
+  region?: "domestic" | "overseas";
+  aliases?: string[];
+  logoUrl?: string | null;
+  sources?: string[];
   pricing: string;
+  pricingModel?: "free" | "freemium" | "paid" | "usage_based" | "contact" | "unknown";
+  featuredRank?: number | null;
   tags: string[];
   verifiedAt: string;
   editorialNote: string;
@@ -32,12 +38,15 @@ export type AdminSubmissionRecord = {
   reviewNote: string | null;
   createdAt: string;
   reviewedAt: string | null;
+  convertedToolId?: number | null;
 };
 
 type AdminToolRow = Omit<
   AdminToolRecord,
-  "tags" | "platforms" | "languages" | "featured" | "categories" | "scenes"
+  "tags" | "platforms" | "languages" | "featured" | "categories" | "scenes" | "aliases" | "sources"
 > & {
+  aliases: string;
+  sources: string;
   tags: string;
   platforms: string;
   languages: string;
@@ -50,7 +59,8 @@ export async function listAdminTools(db: D1Database): Promise<AdminToolRecord[]>
   const result = await db.prepare(`
     SELECT
       t.id, t.slug, t.name, t.description, t.website_url AS websiteUrl,
-      t.pricing, t.tags, t.verified_at AS verifiedAt,
+      t.region, t.aliases, t.logo_url AS logoUrl, t.sources,
+      t.pricing, t.pricing_model AS pricingModel, t.featured_rank AS featuredRank, t.tags, t.verified_at AS verifiedAt,
       t.editorial_note AS editorialNote, t.platforms, t.languages,
       t.status, t.featured,
       GROUP_CONCAT(DISTINCT c.slug) AS categories,
@@ -70,6 +80,8 @@ export async function listAdminTools(db: D1Database): Promise<AdminToolRecord[]>
   return result.results.map((row) => ({
     ...row,
     tags: parseArray(row.tags),
+    aliases: parseArray(row.aliases),
+    sources: parseArray(row.sources),
     platforms: parseArray(row.platforms),
     languages: parseArray(row.languages),
     featured: Boolean(row.featured),
@@ -85,7 +97,7 @@ export async function listAdminSubmissions(
     SELECT
       id, type, tool_name AS toolName, website_url AS websiteUrl,
       message, email, status, review_note AS reviewNote,
-      created_at AS createdAt, reviewed_at AS reviewedAt
+      created_at AS createdAt, reviewed_at AS reviewedAt, converted_tool_id AS convertedToolId
     FROM submissions
     ORDER BY CASE status WHEN 'pending' THEN 0 ELSE 1 END, created_at DESC
   `).bind().all<AdminSubmissionRecord>();

@@ -1,11 +1,11 @@
-import type { CatalogScene, CatalogTool } from "./catalog";
+import type { CatalogScene, CatalogTool, CatalogFilters } from "./catalog";
 
 export type DiscoveryFilters = {
   query?: string;
   category?: string;
   scene?: string;
-  platform?: string;
-  pricing?: string;
+  platform?: CatalogFilters['platform'];
+  pricing?: CatalogFilters['pricing'];
   region?: "domestic" | "overseas";
   featured?: boolean;
   page?: number;
@@ -40,8 +40,8 @@ export function filterDisplayTools(tools: CatalogTool[], filters: DiscoveryFilte
       if (!matchesPlatform) return false;
     }
 
-    if (filters.pricing === "free" && !/(free|open-source)/i.test(tool.pricing)) return false;
-    if (filters.pricing === "paid" && !/(paid|subscription|usage-based|plans?)/i.test(tool.pricing)) return false;
+    if (filters.pricing === "free" && !['free', 'freemium'].includes(tool.pricingModel)) return false;
+    if (filters.pricing === "paid" && !['freemium', 'paid', 'usage_based', 'contact'].includes(tool.pricingModel)) return false;
     return true;
   });
 }

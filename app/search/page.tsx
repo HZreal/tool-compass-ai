@@ -22,6 +22,11 @@ export function SearchResultsView({ query, result }: { query: string; result: Se
             emptyTitle={query ? `没有找到“${query}”` : "输入一个任务或工具名称"}
             suggestedScenes={result.suggestedScenes}
           />
+          {result.totalPages > 1 && <nav className="pagination" aria-label="搜索分页">
+            {result.page > 1 && <a href={`/search?q=${encodeURIComponent(query)}&page=${result.page - 1}`}>上一页</a>}
+            <span>第 {result.page} / {result.totalPages} 页</span>
+            {result.page < result.totalPages && <a href={`/search?q=${encodeURIComponent(query)}&page=${result.page + 1}`}>下一页</a>}
+          </nav>}
         </section>
       </main>
     </div>
@@ -29,11 +34,12 @@ export function SearchResultsView({ query, result }: { query: string; result: Se
 }
 
 export default async function SearchPage({ searchParams }: { searchParams?: Promise<Record<string, string | string[] | undefined>> }) {
-  const query = singleParam((await searchParams ?? {}).q).trim();
+  const params = await searchParams ?? {};
+  const query = singleParam(params.q).trim();
   const { env } = await import("cloudflare:workers");
   if (!isValidSearchQuery(query)) {
     return <SearchResultsView query={query} result={{ tools: [], total: 0, page: 1, totalPages: 0, suggestedScenes: await listCatalogScenes(env.DB) }} />;
   }
-  const result = await searchPublishedTools(env.DB, query, 1);
+  const result = await searchPublishedTools(env.DB, query, Number(singleParam(params.page) || '1'));
   return <SearchResultsView query={query} result={result} />;
 }

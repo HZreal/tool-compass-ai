@@ -16,7 +16,7 @@ export default defineConfig({
   webServer: {
     command: "node --import tsx tests/e2e/start-server.ts",
     url: "http://localhost:3000",
-    reuseExistingServer: true,
+    reuseExistingServer: false,
     timeout: 120_000,
   },
   projects: [

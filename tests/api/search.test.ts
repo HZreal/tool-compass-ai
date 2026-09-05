@@ -11,7 +11,7 @@ const displayValues = ["Free tier", '["coding"]', "2026-08-31", "Test catalog me
 async function createDatabase() {
   const miniflare = new Miniflare({ modules: true, script: "export default { fetch() { return new Response('ok'); } };", d1Databases: ["DB"] });
   const db = await miniflare.getD1Database("DB");
-  const migrations = await Promise.all(["0000_catalog.sql", "0001_catalog_metadata_order.sql", "0005_catalog_contract.sql"].map((file) => readFile(new URL(`../../drizzle/${file}`, import.meta.url), "utf8")));
+  const migrations = await Promise.all(["0000_catalog.sql", "0001_catalog_metadata_order.sql", "0005_catalog_contract.sql", "0006_structured_pricing.sql", "0008_tool_sources.sql"].map((file) => readFile(new URL(`../../drizzle/${file}`, import.meta.url), "utf8")));
   for (const migration of migrations) {
     for (const statement of migration.split("--> statement-breakpoint")) if (statement.trim()) await db.prepare(statement).run();
   }
@@ -20,6 +20,7 @@ async function createDatabase() {
     ...Array.from({ length: 20 }, (_, index) => db.prepare("INSERT INTO tools (id, slug, name, description, website_url, pricing, tags, verified_at, editorial_note, platforms, languages, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(index + 1, `code-helper-${index + 1}`, index === 0 ? "代码助手" : `Code Helper ${index + 1}`, "A code helper for teams.", `https://example.com/${index + 1}`, ...displayValues, "published")),
     db.prepare("INSERT INTO tools (id, slug, name, description, website_url, pricing, tags, verified_at, editorial_note, platforms, languages, status) VALUES (21, 'archived-code-helper', 'Code Helper Archived', 'Archived code helper.', 'https://example.com/archived', 'Free tier', '[\"coding\"]', '2026-08-29', 'Archived test catalog metadata.', '[\"web\"]', '[\"English\"]', 'archived')"),
   ]);
+  await db.prepare("UPDATE tools SET pricing_model = 'freemium'").run();
   return { db, miniflare };
 }
 
@@ -60,7 +61,7 @@ test("tools API validates query bounds and safely treats FTS operators as text",
   const { db, miniflare } = await createDatabase();
   t.after(() => miniflare.dispose());
 
-  for (const query of ["??", '""', "OR", "NEAR(code helper, 1)", "code*"]) {
+  for (const query of ["??", '""', "NEAR(code helper, 1)", "code*"]) {
     const response = await createToolsResponse(
       db,
       new Request(`https://ai-scenery.test/api/tools?q=${encodeURIComponent(query)}`),

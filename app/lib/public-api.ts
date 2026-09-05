@@ -4,7 +4,7 @@ import { isValidSearchQuery, searchPublishedTools } from "./search";
 function json(body: unknown, init: ResponseInit = {}) {
   return Response.json(body, {
     ...init,
-    headers: { "Cache-Control": "public, max-age=300", ...init.headers },
+    headers: { "Cache-Control": "no-cache, max-age=0, must-revalidate", ...init.headers },
   });
 }
 

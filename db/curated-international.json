@@ -1,0 +1,200 @@
+{
+  "checkedAt": "2026-09-05",
+  "verificationMethod": "仅查阅六款产品的官方价格页或官方套餐帮助页面；未登录、未支付、未实际试用。核验免费/付费模式，不录入具体价格。此日期不适用于其他既有条目。",
+  "unreviewedRecordPolicy": {
+    "pricingModel": "unknown",
+    "checkedAt": null,
+    "note": "资料待复核；尚未查阅当前官方套餐规则。"
+  },
+  "tools": [
+    {
+      "slug": "chatgpt",
+      "name": "ChatGPT",
+      "website": "https://chatgpt.com/",
+      "description": "OpenAI 的通用 AI 助手，支持对话写作、联网搜索、文件分析、图片生成与编程辅助。",
+      "editorialNote": "适合从问题讨论到内容初稿的综合任务；上传、图像和研究等能力有套餐限制，重要事实及生成代码需自行复核。",
+      "category": "chat-assistant",
+      "scenes": [
+        "writing",
+        "image",
+        "office",
+        "coding"
+      ],
+      "pricingModel": "freemium",
+      "pricingNote": "官方提供 Free 免费版与个人、企业付费套餐；付费扩展模型、功能和用量，仍受适用额度与使用规则约束。",
+      "aliases": [
+        "Chat GPT",
+        "OpenAI ChatGPT"
+      ],
+      "platforms": [
+        "Web",
+        "Desktop",
+        "iOS",
+        "Android"
+      ],
+      "languages": [
+        "en"
+      ],
+      "sources": [
+        "https://chatgpt.com/pricing/"
+      ],
+      "checkedAt": "2026-09-05"
+    },
+    {
+      "slug": "claude",
+      "name": "Claude",
+      "website": "https://claude.ai/",
+      "description": "Anthropic 的 AI 助手，支持写作编辑、联网搜索、文件处理、代码生成与数据可视化。",
+      "editorialNote": "适合文档理解和反复推敲内容；免费与付费版均有使用限制，生成文件和代码需要检查，聊天产品与 API 套餐不要混淆。",
+      "category": "chat-assistant",
+      "scenes": [
+        "writing",
+        "office",
+        "coding"
+      ],
+      "pricingModel": "freemium",
+      "pricingNote": "官方提供 Free 免费版，以及 Pro、Max 等付费套餐；付费扩展用量和高级工作能力，使用限制仍适用。",
+      "aliases": [
+        "Anthropic Claude",
+        "克劳德"
+      ],
+      "platforms": [
+        "Web",
+        "Desktop",
+        "iOS",
+        "Android"
+      ],
+      "languages": [
+        "en"
+      ],
+      "sources": [
+        "https://claude.com/pricing"
+      ],
+      "checkedAt": "2026-09-05"
+    },
+    {
+      "slug": "gemini",
+      "name": "Gemini",
+      "website": "https://gemini.google.com/",
+      "description": "Google 的 AI 助手，支持日常问答、研究、图像生成编辑与 Canvas 内容创作。",
+      "editorialNote": "适合结合 Google 产品进行学习与创作；各功能有地区、账号和套餐条件，不能把某地区价格页权益视为所有用户均可获得。",
+      "category": "chat-assistant",
+      "scenes": [
+        "writing",
+        "image",
+        "office",
+        "coding"
+      ],
+      "pricingModel": "freemium",
+      "pricingNote": "官方列出 Google 账号可用的 Free 免费层与 Google AI 付费订阅；付费提供更多额度或功能，具体可用性依地区与账号而定。",
+      "aliases": [
+        "Google Gemini",
+        "谷歌Gemini",
+        "Bard"
+      ],
+      "platforms": [
+        "Web",
+        "Mobile",
+        "macOS"
+      ],
+      "languages": [
+        "en"
+      ],
+      "sources": [
+        "https://gemini.google/subscriptions/"
+      ],
+      "checkedAt": "2026-09-05"
+    },
+    {
+      "slug": "perplexity",
+      "name": "Perplexity",
+      "website": "https://www.perplexity.ai/",
+      "description": "以搜索和资料问答为核心的 AI 工具，帮助查找信息、理解上传文件并开展主题研究。",
+      "editorialNote": "适合先建立主题概览再阅读来源；搜索回答及引用并非事实保证，高级检索、文件与任务额度依套餐而异。",
+      "category": "learning-research",
+      "scenes": [
+        "writing",
+        "office"
+      ],
+      "pricingModel": "freemium",
+      "pricingNote": "官方帮助中心确认有免费账号与 Pro 等付费订阅；免费高级搜索和文件能力有限，套餐权益以当前账户页为准。",
+      "aliases": [
+        "Perplexity AI",
+        "Perplexity搜索"
+      ],
+      "platforms": [
+        "Web",
+        "Mobile"
+      ],
+      "languages": [
+        "en"
+      ],
+      "sources": [
+        "https://www.perplexity.ai/help-center/en/articles/11187416-which-perplexity-subscription-plan-is-right-for-you",
+        "https://www.perplexity.ai/help-center/en/articles/10352998-account-management-and-security"
+      ],
+      "checkedAt": "2026-09-05"
+    },
+    {
+      "slug": "github-copilot",
+      "name": "GitHub Copilot",
+      "website": "https://github.com/features/copilot",
+      "description": "融入 IDE、终端与 GitHub 工作流的 AI 编程助手，提供代码补全、对话及代理式开发能力。",
+      "editorialNote": "适合在已有代码库中辅助实现；生成代码必须经过测试和安全审查，云代理与代码评审等权益依套餐而异。",
+      "category": "code-development",
+      "scenes": [
+        "coding"
+      ],
+      "pricingModel": "freemium",
+      "pricingNote": "官方提供 Copilot Free 与个人、组织付费套餐；免费补全和代理用量有限，付费方案提供更多能力及额度，部分额外使用可另外计费。",
+      "aliases": [
+        "Copilot",
+        "GitHub AI",
+        "Github Copilot"
+      ],
+      "platforms": [
+        "Web",
+        "IDE extension",
+        "CLI"
+      ],
+      "languages": [
+        "en"
+      ],
+      "sources": [
+        "https://github.com/features/copilot/plans"
+      ],
+      "checkedAt": "2026-09-05"
+    },
+    {
+      "slug": "cursor",
+      "name": "Cursor",
+      "website": "https://cursor.com/",
+      "description": "面向软件开发的 AI 编辑器与代理工具，帮助理解代码库、编写修改代码并推进开发任务。",
+      "editorialNote": "适合需要代码库上下文的开发流程；审查改动、运行测试并设置用量预算，敏感代码使用前应检查隐私模式。",
+      "category": "code-development",
+      "scenes": [
+        "coding"
+      ],
+      "pricingModel": "freemium",
+      "pricingNote": "官方提供免费 Hobby 层及个人、团队付费套餐；免费 Agent 请求有限，付费扩大额度，启用额外按需用量可能产生额外费用。",
+      "aliases": [
+        "Cursor AI",
+        "Cursor编辑器",
+        "Anysphere Cursor"
+      ],
+      "platforms": [
+        "Desktop",
+        "CLI",
+        "Web"
+      ],
+      "languages": [
+        "en",
+        "zh"
+      ],
+      "sources": [
+        "https://cursor.com/pricing"
+      ],
+      "checkedAt": "2026-09-05"
+    }
+  ]
+}

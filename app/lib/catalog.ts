@@ -1,5 +1,4 @@
-import type { ToolRegion, ToolStatus } from "../../drizzle/schema";
-import { seedCatalog } from "../../db/seed";
+import type { ToolRegion, ToolStatus, PricingModel } from "../../drizzle/schema";
 import { toFtsPhrase } from "./search";
 
 export type D1Result<T> = { results: T[] };
@@ -8,12 +7,12 @@ export type D1PreparedStatement = {
   bind(...values: unknown[]): D1PreparedStatement;
   all<T>(): Promise<D1Result<T>>;
   first<T>(): Promise<T | null>;
-  run(): Promise<unknown>;
+  run(): Promise<{ meta: { changes: number } }>;
 };
 
 export type D1Database = {
   prepare(query: string): D1PreparedStatement;
-  batch(statements: D1PreparedStatement[]): Promise<unknown[]>;
+  batch(statements: D1PreparedStatement[]): Promise<{ meta: { changes: number } }[]>;
 };
 
 export type CatalogTool = {
@@ -25,6 +24,8 @@ export type CatalogTool = {
   logoUrl: string | null;
   region: ToolRegion;
   pricing: string;
+  pricingModel: PricingModel;
+  sources?: string[];
   tags: string[];
   verifiedAt: string;
   editorialNote: string;
@@ -66,7 +67,8 @@ export type CatalogCategory = {
 
 export type CatalogScene = CatalogCategory;
 
-type CatalogRow = Omit<CatalogTool, "categories" | "scenes" | "aliases" | "tags" | "platforms" | "languages" | "featured"> & {
+type CatalogRow = Omit<CatalogTool, "categories" | "scenes" | "aliases" | "tags" | "platforms" | "languages" | "featured" | "sources"> & {
+  sources: string;
   featured: number;
   aliases: string;
   categories: string | null;
@@ -79,42 +81,19 @@ type CatalogRow = Omit<CatalogTool, "categories" | "scenes" | "aliases" | "tags"
 const toolFields = `
   t.slug, t.name, t.aliases, t.description, t.website_url AS websiteUrl, t.logo_url AS logoUrl,
   t.region, t.status, t.featured, t.featured_rank AS featuredRank,
-  t.pricing, t.tags, t.verified_at AS verifiedAt, t.editorial_note AS editorialNote,
+  t.pricing, t.pricing_model AS pricingModel, t.tags, t.verified_at AS verifiedAt, t.editorial_note AS editorialNote,
+  t.sources,
   t.platforms, t.languages,
   GROUP_CONCAT(DISTINCT c.slug) AS categories,
   GROUP_CONCAT(DISTINCT s.slug) AS scenes
 `;
-
-// A new Sites D1 binding contains schema migrations but no editorial records.
-// Seed the curated starter catalog exactly once per database binding so the
-// first production request renders the same useful directory as local preview.
-const catalogBootstrapByDatabase = new WeakMap<object, Promise<void>>();
-
-async function ensureCatalogBootstrap(db: D1Database): Promise<void> {
-  const cached = catalogBootstrapByDatabase.get(db);
-  if (cached) return cached;
-
-  const bootstrap = (async () => {
-    const existingTool = await db.prepare("SELECT 1 AS present FROM tools LIMIT 1")
-      .bind()
-      .first<{ present: number }>();
-    if (!existingTool) await seedCatalog(db);
-  })();
-  catalogBootstrapByDatabase.set(db, bootstrap);
-
-  try {
-    await bootstrap;
-  } catch (error) {
-    catalogBootstrapByDatabase.delete(db);
-    throw error;
-  }
-}
 
 function toCatalogTool(row: CatalogRow): CatalogTool {
   return {
     ...row,
     featured: Boolean(row.featured),
     aliases: parseStringArray(row.aliases),
+    sources: parseStringArray(row.sources),
     tags: parseStringArray(row.tags),
     platforms: parseStringArray(row.platforms),
     languages: parseStringArray(row.languages),
@@ -129,7 +108,6 @@ function parseStringArray(value: string): string[] {
 }
 
 export async function listCatalogCategories(db: D1Database): Promise<CatalogCategory[]> {
-  await ensureCatalogBootstrap(db);
   const result = await db.prepare(`
     SELECT slug, name, description, sort_order AS sortOrder
     FROM categories
@@ -139,7 +117,6 @@ export async function listCatalogCategories(db: D1Database): Promise<CatalogCate
 }
 
 export async function listCatalogScenes(db: D1Database): Promise<CatalogScene[]> {
-  await ensureCatalogBootstrap(db);
   const result = await db.prepare(`
     SELECT slug, name, description, sort_order AS sortOrder
     FROM scenes
@@ -149,7 +126,6 @@ export async function listCatalogScenes(db: D1Database): Promise<CatalogScene[]>
 }
 
 export async function getCatalogScene(db: D1Database, slug: string): Promise<CatalogScene | null> {
-  await ensureCatalogBootstrap(db);
   const result = await db.prepare(`
     SELECT slug, name, description, sort_order AS sortOrder
     FROM scenes
@@ -162,7 +138,6 @@ export async function listPublishedTools(
   db: D1Database,
   filters: CatalogFilters = {},
 ): Promise<CatalogTool[]> {
-  await ensureCatalogBootstrap(db);
   const clauses = ["t.status = 'published'"];
   const values: unknown[] = [];
 
@@ -175,8 +150,7 @@ export async function listPublishedTools(
     values.push(filters.scene);
   }
   if (filters.query?.trim()) {
-    clauses.push("t.id IN (SELECT rowid FROM tools_fts WHERE tools_fts MATCH ?)");
-    values.push(toFtsPhrase(filters.query));
+    appendKeywordFilter(clauses, values, filters.query);
   }
   if (filters.featured) clauses.push("t.featured = 1");
 
@@ -199,7 +173,6 @@ export async function listPublishedToolPage(
   db: D1Database,
   filters: CatalogFilters = {},
 ): Promise<CatalogPage> {
-  await ensureCatalogBootstrap(db);
   const { clauses, values } = buildPublishedToolFilters(filters);
   const page = Math.max(1, Math.min(100, Math.floor(filters.page ?? 1) || 1));
   const offset = (page - 1) * CATALOG_PAGE_SIZE;
@@ -235,8 +208,7 @@ function buildPublishedToolFilters(filters: CatalogFilters) {
     values.push(filters.scene);
   }
   if (filters.query?.trim()) {
-    clauses.push("t.id IN (SELECT rowid FROM tools_fts WHERE tools_fts MATCH ?)");
-    values.push(toFtsPhrase(filters.query));
+    appendKeywordFilter(clauses, values, filters.query);
   }
   if (filters.featured) clauses.push("t.featured = 1");
   if (filters.region) { clauses.push("t.region = ?"); values.push(filters.region); }
@@ -244,13 +216,12 @@ function buildPublishedToolFilters(filters: CatalogFilters) {
   if (filters.platform === "api") clauses.push("EXISTS (SELECT 1 FROM json_each(t.platforms) WHERE lower(value) = 'api')");
   if (filters.platform === "desktop") clauses.push("EXISTS (SELECT 1 FROM json_each(t.platforms) WHERE lower(value) IN ('macos', 'windows', 'linux'))");
   if (filters.platform === "mobile") clauses.push("EXISTS (SELECT 1 FROM json_each(t.platforms) WHERE lower(value) IN ('ios', 'android'))");
-  if (filters.pricing === "free") clauses.push("(lower(t.pricing) LIKE '%free%' OR lower(t.pricing) LIKE '%open-source%')");
-  if (filters.pricing === "paid") clauses.push("NOT (lower(t.pricing) LIKE '%free%' OR lower(t.pricing) LIKE '%open-source%')");
+  if (filters.pricing === "free") clauses.push("t.pricing_model IN ('free', 'freemium')");
+  if (filters.pricing === "paid") clauses.push("t.pricing_model IN ('freemium', 'paid', 'usage_based', 'contact')");
   return { clauses, values };
 }
 
 export async function getPublishedTool(db: D1Database, slug: string): Promise<CatalogTool | null> {
-  await ensureCatalogBootstrap(db);
   const result = await db.prepare(`
     SELECT ${toolFields}
     FROM tools t
@@ -263,4 +234,15 @@ export async function getPublishedTool(db: D1Database, slug: string): Promise<Ca
   `).bind(slug).all<CatalogRow>();
 
   return result.results[0] ? toCatalogTool(result.results[0]) : null;
+}
+
+function appendKeywordFilter(clauses:string[], values:unknown[], query:string) {
+  if([...query.trim()].length < 3) {
+    // FTS5 trigram has no tokens for two-character names such as 豆包/千问.
+    clauses.push("instr(lower(t.name || ' ' || t.aliases || ' ' || t.tags || ' ' || t.description || ' ' || t.slug),lower(?)) > 0");
+    values.push(query.trim());
+  } else {
+    clauses.push("t.id IN (SELECT rowid FROM tools_fts WHERE tools_fts MATCH ?)");
+    values.push(toFtsPhrase(query));
+  }
 }
