@@ -104,6 +104,15 @@ test("admin tool metadata round-trips region, aliases, logo and sources on creat
   assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM tools_fts WHERE tools_fts MATCH 'Changed'").first<{ n: number }>())?.n, 1);
 });
 
+test("operations page renders the standard access-denied state for a rejected administrator", async () => {
+  const source = await readFile(
+    new URL("../../app/admin/operations/page.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /AdminAccessDenied/);
+  assert.match(source, /error instanceof AdminAuthError && error\.status === 403/);
+});
+
 test("admin tool URLs reject non-HTTPS and credentials for website, logo and sources", async (t) => {
   const { db, miniflare } = await createDatabase(); t.after(() => miniflare.dispose());
   for (const url of ["http://example.com", "javascript:alert(1)", "https://user:secret@example.com", "https://user@example.com"]) {
