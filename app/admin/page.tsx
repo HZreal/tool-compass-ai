@@ -40,7 +40,7 @@ export function AdminPageShell({
   return (
     <div className="admin-shell">
       <header className="admin-header">
-        <a className="admin-wordmark" href="/admin"><span>景</span><strong>AI Scenery / Admin</strong></a>
+        <a className="admin-wordmark" href="/admin"><span>盘</span><strong>Tool Compass AI / Admin</strong></a>
         <nav aria-label="管理导航"><a href="/admin/tools">工具</a><a href="/admin/taxonomy">分类与标签</a><a href="/admin/submissions">投稿</a><a href="/admin/operations">数据维护</a><a href="/">查看站点</a></nav>
       </header>
       <main className="admin-main">

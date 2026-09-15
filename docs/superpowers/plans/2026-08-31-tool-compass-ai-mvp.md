@@ -1,4 +1,4 @@
-# AI Scenery MVP Implementation Plan
+# Tool Compass AI MVP Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -8,7 +8,7 @@
 
 **Tech Stack:** React, TypeScript, Vite, VINext, Sites, Cloudflare Workers, Cloudflare D1/SQLite, Drizzle ORM, Zod, FTS5, Vitest, Playwright.
 
-**Spec:** `docs/superpowers/specs/2026-08-31-ai-scenery-mvp-design.md`; `docs/superpowers/specs/2026-08-31-ai-scenery-technical-design.md`
+**Spec:** `docs/superpowers/specs/2026-08-31-tool-compass-ai-mvp-design.md`; `docs/superpowers/specs/2026-08-31-tool-compass-ai-technical-design.md`
 
 ## Global Constraints
 
@@ -46,11 +46,11 @@
 - Produces: a running app with `GET /`, a local preview and production build.
 
 - [ ] Initialize exactly one Sites VINext project in the workspace and keep its development session available.
-- [ ] Replace starter metadata with title `AI Scenery` and description `按真实任务发现值得使用的 AI 工具`.
-- [ ] Write a failing shell test asserting the main landmark contains an `AI Scenery` heading.
+- [ ] Replace starter metadata with title `Tool Compass AI` and description `按真实任务发现值得使用的 AI 工具`.
+- [ ] Write a failing shell test asserting the main landmark contains a `Tool Compass AI` heading.
 - [ ] Implement the minimal responsive shell and run the test until it passes.
 - [ ] Declare D1 binding `DB` in `.openai/hosting.json`; leave R2 unset.
-- [ ] Run the production build and commit `chore: initialize AI Scenery site`.
+- [ ] Run the production build and commit `chore: initialize Tool Compass AI site`.
 
 ### Task 2: Create and seed the D1 catalog
 
@@ -146,4 +146,4 @@
 - [ ] Add five-minute cache headers only to public GET reads; bypass cache for `/admin` and write endpoints; invalidate affected public reads after mutations.
 - [ ] Document D1 export/restore, required Sites secrets, monthly review and cache-invalidation operations without recording secret values.
 - [ ] Run unit, route, E2E and deployment builds; fix failures and rerun.
-- [ ] Save a Sites version with migrations, privately deploy, test discovery/submission/admin against it, then request explicit approval before public deployment; commit `feat: release AI Scenery MVP`.
+- [ ] Save a Sites version with migrations, privately deploy, test discovery/submission/admin against it, then request explicit approval before public deployment; commit `feat: release Tool Compass AI MVP`.

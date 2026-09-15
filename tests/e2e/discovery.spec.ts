@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test("homepage search reaches a verified tool detail without horizontal overflow", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { level: 1, name: "AI Scenery" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Tool Compass AI" })).toBeVisible();
   const search = page.getByRole("searchbox", { name: "搜索 AI 工具" }).last();
   await search.focus();
   await search.fill("ChatGPT");

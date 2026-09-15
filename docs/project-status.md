@@ -1,4 +1,4 @@
-# AI Scenery：产品总览与实施状态
+# Tool Compass AI：产品总览与实施状态
 
 > 最后核对：2026-09-06。继续开发先读本文件，再读 specs 与当前实施计划。禁止把本地通过、部署成功和线上业务验收混为一谈。
 
@@ -48,7 +48,7 @@
 
 ## 部署与验收边界
 
-站点：https://ai-scenery.elasticcode.chatgpt.site
+站点：https://tool-compass-ai.elasticcode.chatgpt.site
 权限：保持 owner-only，未授权公开发布。
 已部署版本：3，源提交 ffa1bef（2026-09-06）；部署状态 succeeded。`/admin/operations` 已补齐鉴权拒绝处理，生产管理员变量已对齐 Sites 唯一 owner。生产 D1 已确认包含 `catalog_imports`、`tags`、`tool_tags`，迁移 0006（定价）、0007（后台关系）、0008（来源）已生效。
 

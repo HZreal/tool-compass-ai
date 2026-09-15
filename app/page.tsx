@@ -12,7 +12,7 @@ export function HomeView({ featuredTools, categories, scenes }: { featuredTools:
         <section className="hero home-hero" aria-labelledby="site-title">
           <div className="home-hero__copy">
             <p className="eyebrow"><span>Vol. 01</span> 面向真实工作的 AI 工具索引</p>
-            <h1 id="site-title">AI Scenery</h1>
+            <h1 id="site-title">Tool Compass AI</h1>
             <h2>先说任务，<br /><em>再选工具。</em></h2>
             <p className="intro">不追逐收录数量。编辑部逐一核验成熟工具，帮你从一项具体工作出发，找到值得打开的那一个。</p>
           </div>
@@ -78,7 +78,7 @@ export function HomeView({ featuredTools, categories, scenes }: { featuredTools:
 export function Footer() {
   return (
     <footer className="site-footer">
-      <p><strong>AI Scenery</strong> · 编辑部工具图鉴</p>
+      <p><strong>Tool Compass AI</strong> · 编辑部工具图鉴</p>
       <p>资料会变化，使用前请以工具官网为准。</p>
     </footer>
   );

@@ -1,6 +1,6 @@
-# AI Scenery MVP 详细与技术设计（Sites 版）
+# Tool Compass AI MVP 详细与技术设计（Sites 版）
 
-> 本文落实 `2026-08-31-ai-scenery-mvp-design.md`。AI Scenery 采用 Sites 托管，以任务导向的精选工具目录为核心；首版优先保证资料可信、检索迅速、单人运营可维护。
+> 本文落实 `2026-08-31-tool-compass-ai-mvp-design.md`。Tool Compass AI 采用 Sites 托管，以任务导向的精选工具目录为核心；首版优先保证资料可信、检索迅速、单人运营可维护。
 
 ## 1. 架构决策
 
@@ -31,7 +31,7 @@ Sites 负责将构建产物部署到 Cloudflare Worker，并创建/管理逻辑 
 
 ```mermaid
 flowchart LR
-  V[匿名访客] --> W[AI Scenery on Sites]
+  V[匿名访客] --> W[Tool Compass AI on Sites]
   A[管理员 ChatGPT 登录] --> W
   W --> D[(D1 工具与运营数据)]
   W --> O[工具官网外链]

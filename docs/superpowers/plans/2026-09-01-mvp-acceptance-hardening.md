@@ -1,14 +1,14 @@
-# AI Scenery MVP 验收补强实施计划
+# Tool Compass AI MVP 验收补强实施计划
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 让 AI Scenery 满足原始 MVP 的信息架构、数据契约、单人运营、可访问性和发布准备要求。
+**Goal:** 让 Tool Compass AI 满足原始 MVP 的信息架构、数据契约、单人运营、可访问性和发布准备要求。
 
 **Architecture:** D1 继续作为分类、场景、工具和运营状态的唯一事实来源。通过版本化迁移扩展工具元数据、结构化标签和索引；公开目录的筛选、排序、分页和全文检索均在 D1 中完成，页面仅渲染查询结果。管理端复用现有单管理员鉴权与审计模型，不增加多用户或角色系统。
 
 **Tech Stack:** React、TypeScript、VINext、Sites、Cloudflare D1/SQLite、Drizzle、Zod、FTS5、Vitest、Playwright。
 
-**Spec:** `docs/superpowers/specs/2026-08-31-ai-scenery-mvp-design.md`；`docs/superpowers/specs/2026-08-31-ai-scenery-technical-design.md`
+**Spec:** `docs/superpowers/specs/2026-08-31-tool-compass-ai-mvp-design.md`；`docs/superpowers/specs/2026-08-31-tool-compass-ai-technical-design.md`
 
 **Status record:** `docs/project-status.md` is the current product and delivery summary. Update it and the checkboxes below together.
 

@@ -28,10 +28,10 @@ async function renderHome() {
   return { html: renderToStaticMarkup(<HomeView featuredTools={featuredTools} categories={categories} scenes={scenes} />), miniflare };
 }
 
-test("renders the AI Scenery heading inside the main landmark", async (t) => {
+test("renders the Tool Compass AI heading inside the main landmark", async (t) => {
   const { html, miniflare } = await renderHome();
   t.after(() => miniflare.dispose());
-  assert.match(html, /<main[\s>][\s\S]*?<h1[^>]*>AI Scenery<\/h1>[\s\S]*?<\/main>/i);
+  assert.match(html, /<main[\s>][\s\S]*?<h1[^>]*>Tool Compass AI<\/h1>[\s\S]*?<\/main>/i);
 });
 
 test("keeps the narrow shell within the viewport without relying on a global reset", async () => {

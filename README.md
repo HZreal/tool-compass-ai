@@ -1,4 +1,4 @@
-# AI Scenery
+# Tool Compass AI
 
 一个面向真实工作任务的 AI 工具策展目录。它不是“收录越多越好”的导航站，而是由编辑筛选工具、场景和使用价值，帮助访客从具体任务出发找到合适的产品。
 
@@ -56,11 +56,11 @@ npm run db:seed:local
 
 主工作区的 `.worktrees/` 被 `.gitignore` 忽略，是为了防止把嵌套 checkout 当作普通目录加入主分支；这不影响 worktree 内的源码被 Git 管理。
 
-本项目开发分支位于 `.worktrees/ai-scenery-mvp`，应在该目录中提交和推送：
+本项目开发分支位于 `.worktrees/tool-compass-ai-mvp`，应在该目录中提交和推送：
 
 ```bash
-git -C .worktrees/ai-scenery-mvp status
-git -C .worktrees/ai-scenery-mvp push -u origin feat/ai-scenery-mvp
+git -C .worktrees/tool-compass-ai-mvp status
+git -C .worktrees/tool-compass-ai-mvp push -u origin feat/tool-compass-ai
 ```
 
 不要执行 `git add .worktrees`，也不要移除忽略规则。功能分支推送到远端后，再通过 Pull Request 或审查确认合并到 `main`。

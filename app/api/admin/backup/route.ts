@@ -6,13 +6,13 @@ const headers={'cache-control':'no-store'};
 export async function createBackupResponse(db:D1Database, request:Request, adminUserId?:string):Promise<Response> {
   try {
     if(adminUserId===undefined) await requireAdmin(request); else authorizeAdminRequest(request,adminUserId);
-    if(request.method==='GET') return Response.json(await exportBackup(db),{headers:{...headers,'content-disposition':'attachment; filename="ai-scenery-backup.json"'}});
+    if(request.method==='GET') return Response.json(await exportBackup(db),{headers:{...headers,'content-disposition':'attachment; filename="tool-compass-ai-backup.json"'}});
     if(request.method!=='POST') return Response.json({error:'不支持的操作'},{status:405,headers});
     if(request.headers.get('origin') && request.headers.get('origin')!==new URL(request.url).origin) return Response.json({error:'不允许跨站恢复'},{status:403,headers});
     const text=await readBoundedBody(request,MAX_BACKUP_BYTES+1024);
     if(text===null) return Response.json({error:'备份超过 5 MB'},{status:413,headers});
     const payload=JSON.parse(text) as {confirmation?:string;backup?:unknown};
-    if(payload.confirmation!=='RESTORE AI SCENERY') return Response.json({error:'请输入完整恢复确认文字'},{status:400,headers});
+    if(payload.confirmation!=='RESTORE TOOL COMPASS AI') return Response.json({error:'请输入完整恢复确认文字'},{status:400,headers});
     await restoreBackup(db,payload.backup);
     return Response.json({restored:true},{headers});
   } catch(error) {

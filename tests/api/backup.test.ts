@@ -61,7 +61,7 @@ test('backup rejects missing/foreign admins, cross-origin restore, invalid confi
   const headers={'oai-authenticated-user-id':'owner','oai-authenticated-user-email':'owner@example.test','content-type':'application/json'};
   const response=await createBackupResponse(db,new Request(url,{headers}),'owner');assert.equal(response.status,200);assert.equal(response.headers.get('cache-control'),'no-store');assert.match(response.headers.get('content-disposition')!,/attachment/);
   const snapshot=await response.json();
-  assert.equal((await createBackupResponse(db,new Request(url,{method:'POST',headers:{...headers,origin:'https://evil.test'},body:JSON.stringify({confirmation:'RESTORE AI SCENERY',backup:snapshot})}),'owner')).status,403);
+  assert.equal((await createBackupResponse(db,new Request(url,{method:'POST',headers:{...headers,origin:'https://evil.test'},body:JSON.stringify({confirmation:'RESTORE TOOL COMPASS AI',backup:snapshot})}),'owner')).status,403);
   assert.equal((await createBackupResponse(db,new Request(url,{method:'POST',headers,body:JSON.stringify({confirmation:'no',backup:snapshot})}),'owner')).status,400);
   await assert.rejects(restoreBackup(db,{...snapshot as object,tables:{}}));
 });
