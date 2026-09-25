@@ -117,6 +117,8 @@ test.describe("administrator editorial operations", () => {
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     }
     await expect(page.getByRole("link", { name: "下载完整 JSON 备份" })).toHaveAttribute("href", "/api/admin/backup");
+    await expect(page.getByText("当前已发布 92 款工具，其中国内 12 款。2026-09-05 资料包：待导入。", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "导入 2026-09-05 核验资料" })).toBeEnabled();
     await expect(page.getByLabel("备份文件")).toBeVisible();
     await expect(page.getByLabel("恢复确认")).toBeVisible();
   });

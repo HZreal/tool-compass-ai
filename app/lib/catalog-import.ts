@@ -5,8 +5,25 @@ import type { D1Database } from './catalog';
 
 export const CATALOG_IMPORT_ID = 'official-review-2026-09-05';
 
+export type CatalogImportStatus = {
+  imported: boolean;
+  totalPublished: number;
+  domesticPublished: number;
+};
+
+export async function getCatalogImportStatus(db: D1Database): Promise<CatalogImportStatus> {
+  const row = await db.prepare(`SELECT
+    EXISTS(SELECT 1 FROM catalog_imports WHERE id = ?) AS imported,
+    (SELECT COUNT(*) FROM tools WHERE status = 'published') AS totalPublished,
+    (SELECT COUNT(*) FROM tools WHERE status = 'published' AND region = 'domestic') AS domesticPublished
+  `).bind(CATALOG_IMPORT_ID).first<{ imported: number; totalPublished: number; domesticPublished: number }>();
+  if (!row) throw new Error('无法读取目录导入状态');
+  return { imported: Boolean(row.imported), totalPublished: row.totalPublished, domesticPublished: row.domesticPublished };
+}
+
 export async function importReviewedCatalog(db: D1Database) {
-  if (await db.prepare('SELECT id FROM catalog_imports WHERE id = ?').bind(CATALOG_IMPORT_ID).first()) return { alreadyImported: true };
+  const before = await getCatalogImportStatus(db);
+  if (before.imported) return { alreadyImported: true, ...before };
   const statements = [db.prepare('INSERT INTO catalog_imports (id) VALUES (?)').bind(CATALOG_IMPORT_ID)];
   for (const [slug, name, description, rank] of categories) statements.push(db.prepare('INSERT INTO categories(slug,name,description,sort_order) VALUES(?,?,?,?) ON CONFLICT(slug) DO NOTHING').bind(slug,name,description,rank));
   for (const [slug, name, description, rank] of scenes) statements.push(db.prepare('INSERT INTO scenes(slug,name,description,sort_order) VALUES(?,?,?,?) ON CONFLICT(slug) DO NOTHING').bind(slug,name,description,rank));
@@ -26,5 +43,5 @@ export async function importReviewedCatalog(db: D1Database) {
   statements.push(db.prepare('UPDATE tools SET tags=tags'));
   statements.push(db.prepare("INSERT INTO admin_audit_events(action,resource_type,resource_id) VALUES('catalog.import','catalog',0)"));
   await db.batch(statements);
-  return { alreadyImported: false, reviewed: 18, domestic: 12 };
+  return { alreadyImported: false, reviewed: 18, domestic: 12, ...await getCatalogImportStatus(db) };
 }

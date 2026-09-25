@@ -20,7 +20,10 @@ test('empty public reads never write; authenticated catalog import is idempotent
   const {mf,db}=await database();t.after(()=>mf.dispose());
   assert.equal((await listPublishedToolPage(db)).total,0);
   assert.equal(await db.prepare('SELECT id FROM tools LIMIT 1').first(),null);
-  await importReviewedCatalog(db); const second=await importReviewedCatalog(db);assert.equal(second.alreadyImported,true);
+  const first=await importReviewedCatalog(db);
+  assert.deepEqual(first, {alreadyImported:false,reviewed:18,domestic:12,imported:true,totalPublished:92,domesticPublished:12});
+  const second=await importReviewedCatalog(db);
+  assert.deepEqual(second, {alreadyImported:true,imported:true,totalPublished:92,domesticPublished:12});
   assert.equal((await listPublishedToolPage(db)).total,92);
   const chinese=await listPublishedToolPage(db,{region:'domestic'});assert.equal(chinese.total,12);
   assert.equal((await listPublishedToolPage(db,{query:'深度求索'})).tools[0]?.slug,'deepseek');
@@ -28,6 +31,8 @@ test('empty public reads never write; authenticated catalog import is idempotent
   const free=await listPublishedToolPage(db,{region:'domestic',pricing:'free'});assert.ok(free.tools.some(tool=>tool.slug==='deepseek'));
   assert.ok(chinese.tools.every(tool=>tool.sources?.length && tool.verifiedAt==='2026-09-05'));
   assert.equal((await exportBackup(db)).tables.catalog_imports.length,1);
+  await db.prepare("UPDATE tools SET status='archived' WHERE slug='deepseek'").run();
+  assert.deepEqual(await importReviewedCatalog(db), {alreadyImported:true,imported:true,totalPublished:91,domesticPublished:11});
 });
 
 test('full backup restores all business data and FTS, leaving a restore audit',async t=>{
