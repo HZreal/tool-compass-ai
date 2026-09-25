@@ -4,7 +4,7 @@ import test from "node:test";
 import { Miniflare } from "miniflare";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { AdminHomeView } from "../../app/admin/page";
+import { AdminAccessDenied, AdminHomeView } from "../../app/admin/page";
 import { AdminSubmissionsView } from "../../app/admin/submissions/page";
 import { AdminToolsView } from "../../app/admin/tools/page";
 import { createAdminSubmissionsResponse } from "../../app/api/admin/submissions/route";
@@ -111,6 +111,12 @@ test("operations page renders the standard access-denied state for a rejected ad
   );
   assert.match(source, /AdminAccessDenied/);
   assert.match(source, /error instanceof AdminAuthError && error\.status === 403/);
+});
+
+test("access-denied page shows the signed-in user's site-scoped ID for administrator setup", () => {
+  const html = renderToStaticMarkup(<AdminAccessDenied userId="site-scoped-123" />);
+  assert.match(html, /当前站点用户 ID/);
+  assert.match(html, /site-scoped-123/);
 });
 
 test("admin tool URLs reject non-HTTPS and credentials for website, logo and sources", async (t) => {

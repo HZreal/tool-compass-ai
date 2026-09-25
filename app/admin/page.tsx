@@ -52,10 +52,11 @@ export function AdminPageShell({
   );
 }
 
-export function AdminAccessDenied() {
+export function AdminAccessDenied({ userId }: { userId?: string }) {
   return (
     <AdminPageShell eyebrow="Access denied" title="无权访问">
       <p className="admin-lede">此编辑后台仅向指定的 ChatGPT 用户开放。</p>
+      {userId ? <p>当前站点用户 ID：<code>{userId}</code>。如果你是站点所有者，请用此 ID 配置管理员身份。</p> : null}
       <a className="button button--ink" href="/">返回站点</a>
     </AdminPageShell>
   );
@@ -65,7 +66,11 @@ export default async function AdminPage() {
   try {
     await requireAdminPage("/admin");
   } catch (error) {
-    if (error instanceof AdminAuthError && error.status === 403) return <AdminAccessDenied />;
+    if (error instanceof AdminAuthError && error.status === 403) {
+      const { getChatGPTUser } = await import("../chatgpt-auth");
+      const user = await getChatGPTUser();
+      return <AdminAccessDenied userId={user?.userId} />;
+    }
     throw error;
   }
   const { env } = await import("cloudflare:workers");
