@@ -31,7 +31,7 @@ npm run dev
 
 打开 `http://localhost:3000`。`db:seed:local` 会重建本地 D1 资料，若要保留本地编辑记录，请先不要执行它。
 
-本地开发环境可通过 `/signin-with-chatgpt?return_to=/admin` 进入管理员预览；生产环境只信任 Sites 注入的 ChatGPT 身份，并要求 `ADMIN_USER_ID` 与唯一管理员一致。
+本地开发环境可通过 `/signin-with-chatgpt?return_to=/admin` 进入管理员预览；生产环境只信任 Sites 注入的 ChatGPT 身份。`ADMIN_USER_ID` 必须使用当前站点的 `oai-authenticated-user-id`，不能使用 Sites 访问策略中的账户 ID。首次配置与 403 排查步骤见运维手册。
 
 ## 常用命令
 
