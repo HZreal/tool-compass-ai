@@ -4,6 +4,7 @@ import {
   LOCAL_DEV_ADMIN_EMAIL,
   LOCAL_DEV_ADMIN_USER_ID,
   localDevelopmentUserIdFromCookie,
+  signInPathForHost,
 } from "./lib/local-auth";
 
 export type ChatGPTUser = {
@@ -62,12 +63,12 @@ export async function requireChatGPTUser(
   const user = await getChatGPTUser();
   if (user) return user;
 
-  redirect(chatGPTSignInPath(returnTo));
+  const hostname = (await headers()).get("host")?.split(":")[0] ?? "";
+  redirect(signInPathForHost(returnTo, hostname));
 }
 
 export function chatGPTSignInPath(returnTo: string): string {
-  const safeReturnTo = safeRelativeReturnPath(returnTo);
-  return `${SIGN_IN_PATH}?return_to=${encodeURIComponent(safeReturnTo)}`;
+  return signInPathForHost(returnTo, "");
 }
 
 export function chatGPTSignOutPath(returnTo = "/"): string {

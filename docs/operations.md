@@ -59,7 +59,7 @@ npm run test:e2e
 
 更换管理员时先核对新 ID，再更新 secret 并按控制面的要求重新发布/激活。分别验证：未登录请求被拒绝、非管理员被拒绝、指定管理员成功。请求身份头必须来自 Sites 可信认证边界；本地伪造头不能作为线上鉴权证明。
 
-localhost 登录 cookie 仅用于本地开发。不要把本地自动登录成功当作线上 ChatGPT 登录成功；生产域名不应接受本地 cookie 回退。
+localhost 登录 cookie 仅用于本地开发，入口为 `/local-signin-with-chatgpt`；线上 `/signin-with-chatgpt` 完全由 Sites 分发器接管。不要把本地自动登录成功当作线上 ChatGPT 登录成功；生产域名不应接受本地 cookie 回退。
 
 ## 备份、恢复与演练
 

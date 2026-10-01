@@ -34,9 +34,17 @@ export function safeLocalReturnPath(value: string | null): string {
     return "/";
   }
   if (url.origin !== "https://app.local") return "/";
-  if (url.pathname === "/signin-with-chatgpt" || url.pathname === "/signout-with-chatgpt" || url.pathname === "/callback") {
+  if (url.pathname === "/signin-with-chatgpt" || url.pathname === "/local-signin-with-chatgpt" || url.pathname === "/signout-with-chatgpt" || url.pathname === "/callback") {
     return "/";
   }
 
   return `${url.pathname}${url.search}${url.hash}`;
+}
+
+export function signInPathForHost(returnTo: string, hostname: string): string {
+  // The hosted path belongs to Sites; only localhost uses the app-owned route.
+  const path = isLocalDevelopmentHost(hostname)
+    ? "/local-signin-with-chatgpt"
+    : "/signin-with-chatgpt";
+  return `${path}?return_to=${encodeURIComponent(safeLocalReturnPath(returnTo))}`;
 }
