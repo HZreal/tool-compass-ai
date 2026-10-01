@@ -57,6 +57,8 @@ npm run test:e2e
 4. 重新部署已保存的站点版本，确认环境修订已生效。修改 secret 而不重新部署不能作为配置已生效的证据。
 5. 在原登录会话刷新 `/admin`，确认出现“编辑工作台”，再访问 `/admin/operations`。实际页面通过后才能继续资料导入；部署状态成功本身不代表管理员访问成功。
 
+若跳至 `auth.openai.com` 后出现 Cloudflare 安全验证、400 或循环登录，应先在常规浏览器重新从站点 `/admin` 发起登录，不在旧授权地址反复刷新；确认浏览器允许 JavaScript 与相关站点 Cookie，并排查 VPN、代理、广告/隐私扩展或网络限制。具体排查步骤见 [OpenAI 登录帮助](https://help.openai.com/en/articles/7426629-why-can-t-i-log-in-to-chatgpt)。独立自动化浏览器遇到安全验证不能作为管理员身份失败的证据，也不能用它绕过登录。若常规浏览器仍失败，记录时间、浏览器版本、错误截图和可见的 Ray ID，再通过 OpenAI 支持渠道排查；不要把授权 URL 的 `state`、`nonce`、`code` 或 Cookie 写入工单或仓库。
+
 更换管理员时先核对新 ID，再更新 secret 并按控制面的要求重新发布/激活。分别验证：未登录请求被拒绝、非管理员被拒绝、指定管理员成功。请求身份头必须来自 Sites 可信认证边界；本地伪造头不能作为线上鉴权证明。
 
 localhost 登录 cookie 仅用于本地开发，入口为 `/local-signin-with-chatgpt`；线上 `/signin-with-chatgpt` 完全由 Sites 分发器接管。不要把本地自动登录成功当作线上 ChatGPT 登录成功；生产域名不应接受本地 cookie 回退。
