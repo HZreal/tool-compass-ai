@@ -3,7 +3,7 @@ import test from 'node:test';
 import { readFile, readdir } from 'node:fs/promises';
 import { Miniflare } from 'miniflare';
 import { exportBackup, restoreBackup } from '../../app/lib/backup';
-import { importReviewedCatalog } from '../../app/lib/catalog-import';
+import { CATALOG_IMPORT_ID, importReviewedCatalog } from '../../app/lib/catalog-import';
 import { createBackupResponse } from '../../app/api/admin/backup/route';
 import { listPublishedToolPage } from '../../app/lib/catalog';
 
@@ -21,7 +21,7 @@ test('empty public reads never write; authenticated catalog import is idempotent
   assert.equal((await listPublishedToolPage(db)).total,0);
   assert.equal(await db.prepare('SELECT id FROM tools LIMIT 1').first(),null);
   const first=await importReviewedCatalog(db);
-  assert.deepEqual(first, {alreadyImported:false,reviewed:18,domestic:12,imported:true,totalPublished:92,domesticPublished:12});
+  assert.deepEqual(first, {alreadyImported:false,reviewed:24,domestic:12,imported:true,totalPublished:92,domesticPublished:12});
   const second=await importReviewedCatalog(db);
   assert.deepEqual(second, {alreadyImported:true,imported:true,totalPublished:92,domesticPublished:12});
   assert.equal((await listPublishedToolPage(db)).total,92);
@@ -33,6 +33,35 @@ test('empty public reads never write; authenticated catalog import is idempotent
   assert.equal((await exportBackup(db)).tables.catalog_imports.length,1);
   await db.prepare("UPDATE tools SET status='archived' WHERE slug='deepseek'").run();
   assert.deepEqual(await importReviewedCatalog(db), {alreadyImported:true,imported:true,totalPublished:91,domesticPublished:11});
+});
+
+test('the next six reviewed global tools import official sources and structured pricing', async t => {
+  const {mf,db}=await database();t.after(()=>mf.dispose());
+  await importReviewedCatalog(db);
+  const result=await db.prepare(`SELECT slug, pricing_model AS pricingModel, sources, verified_at AS verifiedAt
+    FROM tools WHERE slug IN ('adobe-firefly','canva','elevenlabs','midjourney','runway','zapier') ORDER BY slug`)
+    .all<{slug:string;pricingModel:string;sources:string;verifiedAt:string}>();
+  assert.deepEqual(result.results.map(row=>({
+    slug:row.slug,pricingModel:row.pricingModel,sourceCount:(JSON.parse(row.sources) as string[]).length,verifiedAt:row.verifiedAt,
+  })),[
+    {slug:'adobe-firefly',pricingModel:'freemium',sourceCount:1,verifiedAt:'2026-10-04'},
+    {slug:'canva',pricingModel:'freemium',sourceCount:1,verifiedAt:'2026-10-04'},
+    {slug:'elevenlabs',pricingModel:'freemium',sourceCount:1,verifiedAt:'2026-10-04'},
+    {slug:'midjourney',pricingModel:'paid',sourceCount:1,verifiedAt:'2026-10-04'},
+    {slug:'runway',pricingModel:'freemium',sourceCount:1,verifiedAt:'2026-10-04'},
+    {slug:'zapier',pricingModel:'freemium',sourceCount:1,verifiedAt:'2026-10-04'},
+  ]);
+});
+
+test('a previous review batch does not prevent importing the expanded 2026-10-04 package', async t => {
+  const {mf,db}=await database();t.after(()=>mf.dispose());
+  await db.prepare('INSERT INTO catalog_imports(id) VALUES(?)').bind('official-review-2026-09-05').run();
+  const result=await importReviewedCatalog(db);
+  assert.equal(result.alreadyImported,false);
+  assert.ok('reviewed' in result);
+  assert.equal(result.reviewed,24);
+  assert.equal((await db.prepare('SELECT COUNT(*) AS count FROM catalog_imports').first<{count:number}>())?.count,2);
+  assert.equal((await db.prepare('SELECT COUNT(*) AS count FROM catalog_imports WHERE id=?').bind(CATALOG_IMPORT_ID).first<{count:number}>())?.count,1);
 });
 
 test('full backup restores all business data and FTS, leaving a restore audit',async t=>{

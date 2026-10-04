@@ -3,7 +3,7 @@ import domestic from '../../db/curated-domestic.json';
 import international from '../../db/curated-international.json';
 import type { D1Database } from './catalog';
 
-export const CATALOG_IMPORT_ID = 'official-review-2026-09-05';
+export const CATALOG_IMPORT_ID = 'official-review-2026-10-04';
 
 export type CatalogImportStatus = {
   imported: boolean;
@@ -43,5 +43,5 @@ export async function importReviewedCatalog(db: D1Database) {
   statements.push(db.prepare('UPDATE tools SET tags=tags'));
   statements.push(db.prepare("INSERT INTO admin_audit_events(action,resource_type,resource_id) VALUES('catalog.import','catalog',0)"));
   await db.batch(statements);
-  return { alreadyImported: false, reviewed: 18, domestic: 12, ...await getCatalogImportStatus(db) };
+  return { alreadyImported: false, reviewed: domestic.tools.length + international.tools.length, domestic: domestic.tools.length, ...await getCatalogImportStatus(db) };
 }
