@@ -3,7 +3,7 @@ import domestic from '../../db/curated-domestic.json';
 import international from '../../db/curated-international.json';
 import type { D1Database } from './catalog';
 
-export const CATALOG_IMPORT_ID = 'official-review-2026-10-04';
+export const CATALOG_IMPORT_ID = 'official-review-2026-10-06';
 
 export type CatalogImportStatus = {
   imported: boolean;

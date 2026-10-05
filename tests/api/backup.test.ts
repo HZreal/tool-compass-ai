@@ -21,7 +21,7 @@ test('empty public reads never write; authenticated catalog import is idempotent
   assert.equal((await listPublishedToolPage(db)).total,0);
   assert.equal(await db.prepare('SELECT id FROM tools LIMIT 1').first(),null);
   const first=await importReviewedCatalog(db);
-  assert.deepEqual(first, {alreadyImported:false,reviewed:24,domestic:12,imported:true,totalPublished:92,domesticPublished:12});
+  assert.deepEqual(first, {alreadyImported:false,reviewed:30,domestic:12,imported:true,totalPublished:92,domesticPublished:12});
   const second=await importReviewedCatalog(db);
   assert.deepEqual(second, {alreadyImported:true,imported:true,totalPublished:92,domesticPublished:12});
   assert.equal((await listPublishedToolPage(db)).total,92);
@@ -53,15 +53,34 @@ test('the next six reviewed global tools import official sources and structured 
   ]);
 });
 
-test('a previous review batch does not prevent importing the expanded 2026-10-04 package', async t => {
+test('a previous review batch does not prevent importing the expanded current package', async t => {
   const {mf,db}=await database();t.after(()=>mf.dispose());
   await db.prepare('INSERT INTO catalog_imports(id) VALUES(?)').bind('official-review-2026-09-05').run();
   const result=await importReviewedCatalog(db);
   assert.equal(result.alreadyImported,false);
   assert.ok('reviewed' in result);
-  assert.equal(result.reviewed,24);
+  assert.equal(result.reviewed,30);
   assert.equal((await db.prepare('SELECT COUNT(*) AS count FROM catalog_imports').first<{count:number}>())?.count,2);
   assert.equal((await db.prepare('SELECT COUNT(*) AS count FROM catalog_imports WHERE id=?').bind(CATALOG_IMPORT_ID).first<{count:number}>())?.count,1);
+});
+
+test('the 2026-10-06 review batch enriches six more established tools without adding records', async t => {
+  const {mf,db}=await database();t.after(()=>mf.dispose());
+  await db.prepare('INSERT INTO catalog_imports(id) VALUES(?)').bind('official-review-2026-10-04').run();
+  const imported=await importReviewedCatalog(db);
+  assert.equal(imported.alreadyImported,false);
+  assert.equal(imported.totalPublished,92);
+  const result=await db.prepare(`SELECT slug, pricing_model AS pricingModel, sources, verified_at AS verifiedAt FROM tools
+    WHERE slug IN ('grammarly','heygen','ideogram','microsoft-copilot','notion','suno') ORDER BY slug`)
+    .all<{slug:string;pricingModel:string;sources:string;verifiedAt:string}>();
+  assert.deepEqual(result.results.map(row=>({slug:row.slug,pricingModel:row.pricingModel,sourceCount:(JSON.parse(row.sources) as string[]).length,verifiedAt:row.verifiedAt})),[
+    {slug:'grammarly',pricingModel:'freemium',sourceCount:1,verifiedAt:'2026-10-06'},
+    {slug:'heygen',pricingModel:'freemium',sourceCount:1,verifiedAt:'2026-10-06'},
+    {slug:'ideogram',pricingModel:'freemium',sourceCount:1,verifiedAt:'2026-10-06'},
+    {slug:'microsoft-copilot',pricingModel:'freemium',sourceCount:1,verifiedAt:'2026-10-06'},
+    {slug:'notion',pricingModel:'freemium',sourceCount:1,verifiedAt:'2026-10-06'},
+    {slug:'suno',pricingModel:'freemium',sourceCount:1,verifiedAt:'2026-10-06'},
+  ]);
 });
 
 test('full backup restores all business data and FTS, leaving a restore audit',async t=>{
