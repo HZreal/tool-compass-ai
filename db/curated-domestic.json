@@ -1,0 +1,419 @@
+{
+  "checkedAt": "2026-09-05",
+  "verificationMethod": "仅核对可公开访问的官方网页和官方搜索索引摘要；未登录、未实际试用、未核实支付页。checkedAt 是本次资料查阅日期，不是产品测试日期。",
+  "tools": [
+    {
+      "slug": "deepseek",
+      "name": "DeepSeek",
+      "website": "https://www.deepseek.com/zh/",
+      "description": "提供中文问答、推理、联网搜索和文档内容提取的通用 AI 助手。",
+      "editorialNote": "适合梳理问题和处理文本资料；重要事实仍需核对原始来源。消费端免费与 API 计费需分开理解。",
+      "category": "chat-assistant",
+      "scenes": [
+        "writing",
+        "coding"
+      ],
+      "pricingModel": "free",
+      "pricingNote": "官网明确提供免费对话；开发者 API 另按 token 用量计费。",
+      "aliases": [
+        "深度求索",
+        "Deep Seek"
+      ],
+      "platforms": [
+        "Web",
+        "iOS",
+        "Android"
+      ],
+      "languages": [
+        "zh",
+        "en"
+      ],
+      "sources": [
+        "https://www.deepseek.com/zh/",
+        "https://api-docs.deepseek.com/news/news250115/",
+        "https://api-docs.deepseek.com/zh-cn/quick_start/pricing/"
+      ],
+      "checkedAt": "2026-09-05"
+    },
+    {
+      "slug": "kimi",
+      "name": "Kimi",
+      "website": "https://www.kimi.com/",
+      "description": "面向文档阅读、深度研究、写作和演示文稿制作的 AI 助手。",
+      "editorialNote": "适合从资料到初稿的长任务；研究结论和 PPT 内容仍应人工审核，复杂任务会消耗更多额度。",
+      "category": "chat-assistant",
+      "scenes": [
+        "writing",
+        "presentation",
+        "office",
+        "coding"
+      ],
+      "pricingModel": "freemium",
+      "pricingNote": "官方说明网页、桌面和移动版可免费使用；高级功能和更高额度需要会员，任务共享额度池。具体价格以购买页为准。",
+      "aliases": [
+        "月之暗面",
+        "Kimi智能助手",
+        "Kimi Chat"
+      ],
+      "platforms": [
+        "Web",
+        "macOS",
+        "Windows",
+        "iOS",
+        "Android",
+        "HarmonyOS"
+      ],
+      "languages": [
+        "zh",
+        "en"
+      ],
+      "sources": [
+        "https://www.kimi.com/zh-tw/products/download",
+        "https://www.kimi.com/help/membership/membership-overview",
+        "https://www.kimi.com/zh-hans/resources/kimi-work-introduction"
+      ],
+      "checkedAt": "2026-09-05"
+    },
+    {
+      "slug": "doubao",
+      "name": "豆包",
+      "website": "https://www.doubao.com/",
+      "description": "字节跳动旗下 AI 助手，支持写作润色、翻译、网页总结、截图提问和代码问答。",
+      "editorialNote": "适合中文日常工作与学习；桌面共享、划词等能力依赖相应客户端，不应把全部高级能力标为无限免费。",
+      "category": "chat-assistant",
+      "scenes": [
+        "writing",
+        "office",
+        "coding",
+        "image"
+      ],
+      "pricingModel": "freemium",
+      "pricingNote": "官方付费协议区分免费版普通账号与专业版系列会员；会员解锁更多 AI 功能额度，价格及额度以订阅页为准。",
+      "aliases": [
+        "Doubao",
+        "豆包AI",
+        "字节豆包"
+      ],
+      "platforms": [
+        "Web",
+        "Desktop",
+        "Mobile",
+        "Browser extension"
+      ],
+      "languages": [
+        "zh"
+      ],
+      "sources": [
+        "https://www.doubao.com/download",
+        "https://www.doubao.com/legal/ey01"
+      ],
+      "checkedAt": "2026-09-05"
+    },
+    {
+      "slug": "qianwen",
+      "name": "千问",
+      "website": "https://www.qianwen.com/",
+      "description": "阿里旗下个人 AI 助手，覆盖对话、深度研究、AI 编程和演示文稿生成。",
+      "editorialNote": "面向消费端的千问与开发者模型平台应分别收录；旧称可用于搜索，但不要把通义所有子产品视为同一工具。",
+      "category": "chat-assistant",
+      "scenes": [
+        "writing",
+        "presentation",
+        "coding",
+        "office"
+      ],
+      "pricingModel": "unknown",
+      "pricingNote": "阿里 2025 年 11 月官方发布稿说明内地公测免费开放；当前官网未公开可核实的完整收费规则，不据旧公测承诺推断现行全免费。",
+      "aliases": [
+        "通义千问",
+        "通义",
+        "Qwen",
+        "千问App"
+      ],
+      "platforms": [
+        "Web",
+        "PC",
+        "iOS",
+        "Android"
+      ],
+      "languages": [
+        "zh"
+      ],
+      "sources": [
+        "https://www.qianwen.com/",
+        "https://home.alibabagroup.com/zh-HK/document-1928528945544691712"
+      ],
+      "checkedAt": "2026-09-05"
+    },
+    {
+      "slug": "wenxin",
+      "name": "文心助手",
+      "website": "https://wenxin.baidu.com/",
+      "description": "百度旗下全能 AI 助手，支持中文写作、深度搜索、文档解析和多模态问答。",
+      "editorialNote": "原文心一言入口已跳转文心助手。适合中文资料搜集与初稿整理，带溯源的回答也应核对原文。",
+      "category": "chat-assistant",
+      "scenes": [
+        "writing",
+        "office",
+        "presentation"
+      ],
+      "pricingModel": "unknown",
+      "pricingNote": "官方桌面页面提供免费体验入口；未取得当前完整套餐及高级功能收费规则，不标注全部功能免费。",
+      "aliases": [
+        "文心",
+        "文心一言",
+        "ERNIE Bot",
+        "百度文心"
+      ],
+      "platforms": [
+        "Web",
+        "macOS",
+        "Windows",
+        "iOS",
+        "Android"
+      ],
+      "languages": [
+        "zh"
+      ],
+      "sources": [
+        "https://yiyan.baidu.com/",
+        "https://wenxin.baidu.com/home",
+        "https://wantalk.baidu.com/pc"
+      ],
+      "checkedAt": "2026-09-05"
+    },
+    {
+      "slug": "yuanbao",
+      "name": "腾讯元宝",
+      "website": "https://yuanbao.tencent.com/",
+      "description": "腾讯旗下 AI 助手，提供问答、内容创作和结合腾讯内容生态的信息获取。",
+      "editorialNote": "适合中文信息检索和资料理解；生成结果仅供参考，不能把平台引用等同于事实保证。",
+      "category": "chat-assistant",
+      "scenes": [
+        "writing",
+        "office"
+      ],
+      "pricingModel": "unknown",
+      "pricingNote": "公开入口未显示可核实的现行完整定价与免费额度规则；未登录核实。",
+      "aliases": [
+        "元宝",
+        "Yuanbao",
+        "腾讯AI助手"
+      ],
+      "platforms": [
+        "Web",
+        "Mobile"
+      ],
+      "languages": [
+        "zh"
+      ],
+      "sources": [
+        "https://yuanbao.tencent.com/",
+        "https://yuanbao.tencent.com/app/list",
+        "https://static.www.tencent.com/attachments/ssv/2025/tencent-ssv-report-2024.pdf"
+      ],
+      "checkedAt": "2026-09-05"
+    },
+    {
+      "slug": "chatglm",
+      "name": "智谱清言",
+      "website": "https://chatglm.cn/",
+      "description": "智谱面向个人用户的 AI 助手，提供对话、AI 阅读、研究报告与图像视频创作入口。",
+      "editorialNote": "适合资料问答与多模态创作探索；核心服务需要账号，部分任务消耗积分，模型输出需复核。",
+      "category": "chat-assistant",
+      "scenes": [
+        "writing",
+        "office",
+        "image",
+        "video",
+        "coding"
+      ],
+      "pricingModel": "unknown",
+      "pricingNote": "官方页面显示会员升级与积分消耗，但未取得免费额度和现行完整套餐规则；不推断永久免费。",
+      "aliases": [
+        "清言",
+        "ChatGLM",
+        "智谱AI"
+      ],
+      "platforms": [
+        "Web",
+        "Desktop",
+        "Mobile"
+      ],
+      "languages": [
+        "zh"
+      ],
+      "sources": [
+        "https://chatglm.cn/",
+        "https://trial.chatglm.cn/",
+        "https://chatglm.cn/app/android/privacypolicy"
+      ],
+      "checkedAt": "2026-09-05"
+    },
+    {
+      "slug": "jimeng",
+      "name": "即梦AI",
+      "website": "https://jimeng.jianying.com/",
+      "description": "支持中文提示词的图片与视频创作平台，提供文图生视频、图片生成和智能画布编辑。",
+      "editorialNote": "适合视觉草稿、短视频素材和图片改造；参考素材须有权使用，生成质量与一致性需要逐次检查。",
+      "category": "image-design",
+      "scenes": [
+        "image",
+        "video"
+      ],
+      "pricingModel": "unknown",
+      "pricingNote": "当前创作页明确存在积分消耗；公开首页未披露完整免费额度及套餐规则，具体收费需登录确认。",
+      "aliases": [
+        "即梦",
+        "Jimeng",
+        "即梦 AI"
+      ],
+      "platforms": [
+        "Web"
+      ],
+      "languages": [
+        "zh"
+      ],
+      "sources": [
+        "https://jimeng.jianying.com/",
+        "https://jimeng.jianying.com/ai-tool/home?type=video",
+        "https://jimeng.jianying.com/ai-tool/home?type=image"
+      ],
+      "checkedAt": "2026-09-05"
+    },
+    {
+      "slug": "kling-cn",
+      "name": "可灵AI",
+      "website": "https://klingai.kuaishou.com/",
+      "description": "快手旗下 AI 视频创作工具，提供文字或图片生成视频及视频延长等能力。",
+      "editorialNote": "适合短片镜头与动态素材探索；中文入口已由快手官方确认，但本次页面受 robots 限制，未验证登录后功能。",
+      "category": "video-audio",
+      "scenes": [
+        "video",
+        "image"
+      ],
+      "pricingModel": "unknown",
+      "pricingNote": "快手历史官方公告确认免费灵感值与付费会员并存；旧的每日额度及价格不代表当前规则，本次未取得现行套餐。",
+      "aliases": [
+        "可灵",
+        "Kling",
+        "Kling AI",
+        "快手可灵"
+      ],
+      "platforms": [
+        "Web"
+      ],
+      "languages": [
+        "zh"
+      ],
+      "sources": [
+        "https://ir.kuaishou.com/zh-hans/news-releases/news-release-details/kuaishoukelingaixiangquanqiuyonghuquanmiankaifangneice",
+        "https://klingai.kuaishou.com/"
+      ],
+      "checkedAt": "2026-09-05"
+    },
+    {
+      "slug": "spark",
+      "name": "讯飞星火",
+      "website": "https://xinghuo.xfyun.cn/",
+      "description": "科大讯飞旗下 AI 助手，支持搜索问答、文档阅读、内容写作和代码生成。",
+      "editorialNote": "适合中文学习和办公初稿；PPT、求职等垂直功能可能有独立权益，不应套用 API 的免费说明。",
+      "category": "chat-assistant",
+      "scenes": [
+        "writing",
+        "presentation",
+        "office",
+        "coding"
+      ],
+      "pricingModel": "unknown",
+      "pricingNote": "公开资料未完整说明消费端当前收费范围；官网 API 免费字样不等于所有应用能力免费，部分垂直助手有免费与充值会员。",
+      "aliases": [
+        "星火",
+        "SparkDesk",
+        "讯飞星火认知大模型"
+      ],
+      "platforms": [
+        "Web",
+        "Desktop",
+        "iOS",
+        "Android",
+        "HarmonyOS",
+        "Browser extension",
+        "WeChat mini program"
+      ],
+      "languages": [
+        "zh"
+      ],
+      "sources": [
+        "https://xinghuo.xfyun.cn/",
+        "https://xinghuo.xfyun.cn/doc/spark-guide/spark.html",
+        "https://xinghuo.xfyun.cn/doc/spark-guide/内容创作.html"
+      ],
+      "checkedAt": "2026-09-05"
+    },
+    {
+      "slug": "wps-ai",
+      "name": "WPS AI",
+      "website": "https://ai.wps.cn/",
+      "description": "融入 WPS 办公场景的 AI 工具，帮助生成 PPT、写作、阅读文档及处理表格公式。",
+      "editorialNote": "适合已有 WPS 文档流程的用户；网页版仅开放基础功能，表格公式和文档结果需人工校验。",
+      "category": "office-productivity",
+      "scenes": [
+        "office",
+        "presentation",
+        "writing"
+      ],
+      "pricingModel": "freemium",
+      "pricingNote": "官方介绍说明有部分免费功能，高级功能或模板可能需要会员；体验权益和具体套餐以账号页面为准。",
+      "aliases": [
+        "金山WPS AI",
+        "WPS人工智能",
+        "WPS智能办公"
+      ],
+      "platforms": [
+        "Web",
+        "WPS client"
+      ],
+      "languages": [
+        "zh"
+      ],
+      "sources": [
+        "https://ai.wps.cn/",
+        "https://ai.wps.cn/cms/CY5IPev4.html"
+      ],
+      "checkedAt": "2026-09-05"
+    },
+    {
+      "slug": "metaso",
+      "name": "秘塔AI搜索",
+      "website": "https://metaso.cn/",
+      "description": "面向信息查找与学习的 AI 搜索工具，提供文件上传、学习和幻灯片入口。",
+      "editorialNote": "适合快速建立主题概览，再回到原始资料核对；普通积分有当日有效限制，不能把搜索辅助当作学术证据。",
+      "category": "learning-research",
+      "scenes": [
+        "writing",
+        "presentation",
+        "office"
+      ],
+      "pricingModel": "freemium",
+      "pricingNote": "官方协议确认普通用户每日有免费刷新积分，另可购买长期积分及会员；每日积分不结转，额度与价格以订购页为准。",
+      "aliases": [
+        "秘塔",
+        "Metaso",
+        "秘塔搜索"
+      ],
+      "platforms": [
+        "Web",
+        "Mobile"
+      ],
+      "languages": [
+        "zh"
+      ],
+      "sources": [
+        "https://metaso.cn/",
+        "https://metaso.cn/meta-user-policy"
+      ],
+      "checkedAt": "2026-09-05"
+    }
+  ]
+}

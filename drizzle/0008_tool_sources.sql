@@ -1,0 +1,1 @@
+ALTER TABLE tools ADD COLUMN sources TEXT NOT NULL DEFAULT '[]';
